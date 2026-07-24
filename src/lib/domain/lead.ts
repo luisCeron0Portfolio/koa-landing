@@ -66,7 +66,7 @@ export function validateLeadInput(input: LeadInput, now: Date = new Date()): Val
   }
 
   if (input.consent !== true) {
-    errors.push({ field: 'consent', message: 'Debés aceptar el consentimiento para continuar.' });
+    errors.push({ field: 'consent', message: 'Debes aceptar el consentimiento para continuar.' });
   }
 
   if (errors.length > 0) {

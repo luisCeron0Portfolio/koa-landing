@@ -29,16 +29,16 @@ export async function sendConfirmationEmail(params: { to: string; confirmUrl: st
   const { error } = await getClient().emails.send({
     from,
     to: params.to,
-    subject: 'Confirmá tu lugar en la lista de espera de KOA Buds',
+    subject: 'Confirma tu lugar en la lista de espera de KOA Buds',
     html: `
       <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;color:#1a1a1a">
-        <p>Gracias por sumarte a la lista de espera de KOA Buds.</p>
+        <p>Gracias por unirte a la lista de espera de KOA Buds.</p>
         <p style="margin:24px 0">
           <a href="${params.confirmUrl}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;border-radius:999px;text-decoration:none;font-weight:600">
             Confirmar mi email
           </a>
         </p>
-        <p style="color:#555;font-size:14px">Este link expira en 24 horas. Si no fuiste vos, ignorá este mensaje.</p>
+        <p style="color:#555;font-size:14px">Este enlace expira en 24 horas. Si tú no lo solicitaste, ignora este mensaje.</p>
 
         <hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0" />
 
@@ -48,7 +48,7 @@ export async function sendConfirmationEmail(params: { to: string; confirmUrl: st
           de captación como esta.
         </p>
         <p style="color:#555;font-size:13px;line-height:1.6">
-          ¿Querés una landing page así para tu propio producto? Escribinos:
+          ¿Quieres una landing page así para tu propio producto? Escríbenos:
         </p>
         <p style="margin:16px 0">
           <a href="${ELEVAFORGE_URL}" style="color:#111;font-weight:600">${ELEVAFORGE_URL.replace('https://', '')}</a>
@@ -58,15 +58,15 @@ export async function sendConfirmationEmail(params: { to: string; confirmUrl: st
       </div>
     `,
     text: [
-      'Gracias por sumarte a la lista de espera de KOA Buds.',
+      'Gracias por unirte a la lista de espera de KOA Buds.',
       '',
-      `Confirmá tu email acá: ${params.confirmUrl}`,
-      '(Este link expira en 24 horas. Si no fuiste vos, ignorá este mensaje.)',
+      `Confirma tu email aquí: ${params.confirmUrl}`,
+      '(Este enlace expira en 24 horas. Si tú no lo solicitaste, ignora este mensaje.)',
       '',
       'Nota: KOA Buds es un producto ficticio — este sitio es un caso de estudio de demostración',
       'creado por Elevaforge para mostrar cómo construimos landing pages de captación como esta.',
       '',
-      `¿Querés una landing page así para tu propio producto? ${ELEVAFORGE_URL} — WhatsApp: ${whatsappUrl}`,
+      `¿Quieres una landing page así para tu propio producto? ${ELEVAFORGE_URL} — WhatsApp: ${whatsappUrl}`,
     ].join('\n'),
   });
 

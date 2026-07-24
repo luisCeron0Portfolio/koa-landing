@@ -318,3 +318,43 @@ se verificó interceptando la navegación con `page.route()` (Playwright) para
 confirmar que el `window.location.href` se dispara con la URL y el mensaje
 correctos tras el delay, y que con el campo de teléfono vacío no hay
 redirección. `tsc`/`astro check`/lint limpios, 33 unit tests, 7 E2E.
+
+# Neutralización de idioma (voseo → neutro) (2026-07-24)
+
+## Pedido
+El usuario pidió pasar todo el copy visible (especialmente el email, "lo más
+notorio") de voseo argentino ("vos", "tenés", "revisá", "sumate", "escribinos")
+a español neutro (forma "tú": "revisa", "súmate", "escríbenos").
+
+## Alcance
+Se tocó **solo texto visible al usuario final** (JSX/HTML renderizado, emails,
+mensajes de error/validación que llegan al cliente). Los comentarios de código
+(`// ...`) se dejaron con la voz que ya usa el equipo en CLAUDE.md — son para
+quien lea el código, no para el visitante, y no es lo que pidió el usuario.
+
+## Cambios (por archivo)
+- `src/lib/adapters/resend.ts`: asunto y cuerpo (html + text) del email de
+  confirmación — "Confirmá"→"Confirma", "sumarte"→"unirte", "Si no fuiste
+  vos"→"Si tú no lo solicitaste", "Querés"→"Quieres", "Escribinos"→"Escríbenos".
+- `src/components/WaitlistForm.tsx`: placeholder de email, mensajes de error
+  (bot/validación/red/rate-limit), texto de éxito, fineprint.
+- `src/pages/confirmar.astro`: "formás"→"formas", "Volvé"→"Vuelve".
+- `src/pages/index.astro`: heading y copy de la sección de waitlist
+  ("Asegurá"→"Asegura", "Dejanos"→"Déjanos"), meta description fallback
+  ("Sumate"→"Súmate").
+- `src/components/ProblemSection.astro`: "enfocado en vos"→"enfocado en ti".
+- `src/components/Faq.astro`: "querés saber"→"quieres saber",
+  "Escribinos"→"Escríbenos".
+- `src/components/SiteFooter.astro`: "Escribinos por WhatsApp"→"Escríbenos
+  por WhatsApp".
+- `src/components/SocialProofCounter.astro`: "Sumate"→"Súmate".
+- `src/lib/domain/lead.ts`: mensaje de validación del consentimiento
+  ("Debés"→"Debes") — es el `message` que ve el usuario en `fieldErrors`.
+
+## Verificado
+- Grep de cierre sin resultados para `\bvos\b` y verbos con tildes `-ás`/`-és`
+  en todo `src/` (fuera de casos neutros compartidos con tú, como "estás").
+- Contenido real de Sanity (hero/problema/specs/testimonios/FAQ) ya estaba en
+  neutro — no requirió cambios ni re-seed.
+- `tsc`/`astro check`/lint limpios, 33 unit tests, 7 E2E (incluido el envío
+  real del email vía Resend con el copy nuevo).

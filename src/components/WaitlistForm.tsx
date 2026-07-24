@@ -196,7 +196,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
     if (turnstileRequired && !turnstileToken) {
       setState({
         status: 'error',
-        message: 'No pudimos verificar que no seas un bot. Recargá la página e intentá de nuevo.',
+        message: 'No pudimos verificar que no seas un bot. Recarga la página e inténtalo de nuevo.',
       });
       return;
     }
@@ -272,11 +272,11 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
 
       setState({
         status: 'error',
-        message: 'No pudimos procesar tu solicitud. Intentá de nuevo en un momento.',
+        message: 'No pudimos procesar tu solicitud. Inténtalo de nuevo en un momento.',
       });
     } catch {
       resetTurnstile();
-      setState({ status: 'error', message: 'Falló la conexión. Revisá tu internet e intentá de nuevo.' });
+      setState({ status: 'error', message: 'Falló la conexión. Revisa tu internet e inténtalo de nuevo.' });
     }
   }
 
@@ -298,7 +298,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         <p className="wl-success-title">¡Estás en la lista!</p>
         <p className="wl-success-text">
           {state.emailSent
-            ? 'Revisá tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.'
+            ? 'Revisa tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.'
             : 'Te sumamos a la lista de espera. Te avisamos apenas abramos el lanzamiento.'}
         </p>
         {phone && <p className="wl-success-redirect">Te estamos llevando a WhatsApp…</p>}
@@ -349,7 +349,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
           name="email"
           type="email"
           required
-          placeholder="vos@ejemplo.com"
+          placeholder="tu@ejemplo.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           aria-invalid={Boolean(fieldErrors.email)}
@@ -408,7 +408,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
 
       {state.status === 'rate_limited' && (
         <p className="wl-alert" role="alert">
-          Demasiados intentos. Probá de nuevo en {Math.ceil(state.retryAfter / 60)} minutos.
+          Demasiados intentos. Inténtalo de nuevo en {Math.ceil(state.retryAfter / 60)} minutos.
         </p>
       )}
       {state.status === 'error' && (
@@ -429,7 +429,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
             : 'Unirme a la lista de espera'}
       </button>
 
-      <p className="wl-fineprint">Sin spam. Podés darte de baja cuando quieras.</p>
+      <p className="wl-fineprint">Sin spam. Puedes darte de baja cuando quieras.</p>
     </form>
   );
 }
