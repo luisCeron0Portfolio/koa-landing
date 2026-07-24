@@ -1,34 +1,132 @@
 ---
+import { Image } from 'astro:assets';
+import glowImg from '../assets/earbuds-glow.jpg';
 import type { ProblemContextContent } from '../lib/domain/content';
 
 interface Props {
   content: ProblemContextContent | null;
 }
-
 const { content } = Astro.props;
 ---
 
 {
   content && (
-    <section class="problem">
-      <h2>{content.heading}</h2>
-      <p>{content.body}</p>
+    <section id="por-que" class="section problem">
+      <div class="container problem-grid">
+        <div class="problem-visual" data-reveal>
+          <Image
+            class="problem-img"
+            src={glowImg}
+            alt="KOA Buds bajo luz de neón"
+            widths={[420, 640, 860]}
+            sizes="(max-width: 860px) 90vw, 520px"
+            loading="lazy"
+          />
+          <span class="problem-tag" aria-hidden="true">
+            <span class="dot" /> Sin compromisos
+          </span>
+        </div>
+
+        <div class="problem-copy">
+          <span class="eyebrow" data-reveal>
+            Por qué existe
+          </span>
+          <h2 class="section-title" data-reveal data-reveal-delay="1">
+            {content.heading}
+          </h2>
+          <p class="problem-body" data-reveal data-reveal-delay="2">
+            {content.body}
+          </p>
+          <div class="problem-stats" data-reveal data-reveal-delay="3">
+            <div>
+              <span class="stat-num gradient-text">0</span>
+              <span class="stat-label">compromisos de sonido</span>
+            </div>
+            <div>
+              <span class="stat-num gradient-text">100%</span>
+              <span class="stat-label">enfocado en vos</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
 
 <style>
-  .problem {
-    max-width: 40rem;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
-    text-align: center;
+  .problem-grid {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 4.5rem);
+    align-items: center;
   }
-  h2 {
-    font-size: clamp(1.5rem, 4vw, 2rem);
-    margin: 0 0 0.75rem;
+  .problem-visual {
+    position: relative;
+    justify-self: center;
+    width: min(90vw, 520px);
   }
-  p {
-    opacity: 0.75;
+  .problem-img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    box-shadow: var(--glow-magenta);
+  }
+  .problem-tag {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--pill);
+    background: rgba(10, 10, 16, 0.78);
+    border: 1px solid var(--border-strong);
+    backdrop-filter: blur(12px);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .problem-tag .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--magenta);
+    box-shadow: 0 0 10px 1px var(--magenta);
+  }
+  .problem-body {
+    color: var(--text-dim);
+    font-size: clamp(1.2rem, 3vw, 1.7rem);
+    line-height: 1.4;
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-top: 1.25rem;
+    max-width: 24ch;
+  }
+  .problem-stats {
+    display: flex;
+    gap: 2.5rem;
+    margin-top: 2.5rem;
+  }
+  .stat-num {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    line-height: 1;
+  }
+  .stat-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+    max-width: 14ch;
+  }
+  @media (min-width: 860px) {
+    .problem-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 </style>

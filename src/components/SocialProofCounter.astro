@@ -2,30 +2,87 @@
 
 ---
 
-<p id="waitlist-count" aria-live="polite"></p>
+<div class="social-proof" data-social-proof hidden>
+  <span class="sp-avatars" aria-hidden="true">
+    <span></span>
+    <span></span>
+    <span></span>
+  </span>
+  <span class="sp-text" data-sp-text aria-live="polite"></span>
+</div>
 
 <script>
   import { formatWaitlistCount } from '../lib/domain/social-proof';
 
-  const el = document.getElementById('waitlist-count');
+  const root = document.querySelector<HTMLElement>('[data-social-proof]');
+  const textEl = root?.querySelector<HTMLElement>('[data-sp-text]');
 
-  fetch('/api/waitlist-count')
-    .then((r) => r.json())
-    .then(({ count }: { count: number }) => {
-      if (el) el.textContent = formatWaitlistCount(count);
-    })
-    .catch(() => {
-      // Silencioso: sin contador es mejor que un número incorrecto o un
-      // error visible al usuario (RF-006 no es crítico para el flujo).
-    });
+  if (root && textEl) {
+    fetch('/api/waitlist-count')
+      .then((r) => r.json())
+      .then(({ count }: { count: number }) => {
+        root.hidden = false;
+
+        if (!Number.isFinite(count) || count <= 0) {
+          textEl.textContent = 'Sumate y sé de los primeros en probarlos';
+          return;
+        }
+
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) {
+          textEl.textContent = formatWaitlistCount(count);
+          return;
+        }
+
+        const start = performance.now();
+        const dur = 1100;
+        const step = (now: number) => {
+          const t = Math.min(1, (now - start) / dur);
+          const eased = 1 - Math.pow(1 - t, 3);
+          textEl.textContent = formatWaitlistCount(Math.round(count * eased));
+          if (t < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      })
+      .catch(() => {
+        // Silencioso: sin contador es mejor que un error visible (RF-006 no es crítico).
+      });
+  }
 </script>
 
 <style>
-  #waitlist-count {
-    text-align: center;
-    opacity: 0.7;
-    font-size: 0.9rem;
-    margin: 0 0 1rem;
-    min-height: 1.2em;
+  .social-proof {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.5rem 1rem 0.5rem 0.6rem;
+    border-radius: var(--pill);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+  .sp-avatars {
+    display: inline-flex;
+  }
+  .sp-avatars span {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+    margin-right: -8px;
+  }
+  .sp-avatars span:nth-child(1) {
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+  }
+  .sp-avatars span:nth-child(2) {
+    background: linear-gradient(135deg, var(--violet), var(--magenta));
+  }
+  .sp-avatars span:nth-child(3) {
+    background: linear-gradient(135deg, var(--magenta), var(--cyan-bright));
+  }
+  .sp-text {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-weight: 500;
   }
 </style>

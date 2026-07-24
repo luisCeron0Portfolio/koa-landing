@@ -1,0 +1,123 @@
+---
+interface Props {
+  productName: string;
+  ctaLabel: string;
+}
+const { productName, ctaLabel } = Astro.props;
+---
+
+<header class="nav" data-nav>
+  <div class="container nav-inner">
+    <a href="#top" class="brand" aria-label={`${productName} — inicio`}>
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">{productName}</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Secciones">
+      <a href="#specs">Specs</a>
+      <a href="#galeria">Galería</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+
+    <a href="#waitlist" class="btn btn-primary nav-cta">{ctaLabel}</a>
+  </div>
+</header>
+
+<script>
+  // Añade sombra/opacidad al nav cuando se scrollea. Static → Astro lo hashea (CSP).
+  const nav = document.querySelector('[data-nav]');
+  if (nav) {
+    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+</script>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    transition:
+      background 0.3s var(--ease),
+      border-color 0.3s var(--ease),
+      backdrop-filter 0.3s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  .nav.scrolled {
+    background: rgba(6, 6, 8, 0.72);
+    backdrop-filter: blur(16px) saturate(140%);
+    border-bottom-color: var(--border);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 68px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+  }
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    background: var(--grad-brand);
+    box-shadow: var(--glow-magenta);
+    position: relative;
+  }
+  .brand-mark::after {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border-radius: 4px;
+    background: var(--bg);
+  }
+  .nav-links {
+    display: none;
+    gap: 2rem;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+  }
+  .nav-links a {
+    position: relative;
+    transition: color 0.2s var(--ease);
+  }
+  .nav-links a:hover {
+    color: var(--text);
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    height: 2px;
+    width: 0;
+    background: var(--grad-brand);
+    transition: width 0.25s var(--ease);
+  }
+  .nav-links a:hover::after {
+    width: 100%;
+  }
+  .nav-cta {
+    padding: 0.6rem 1.15rem;
+    font-size: 0.9rem;
+  }
+  @media (min-width: 800px) {
+    .nav-links {
+      display: flex;
+    }
+  }
+  @media (max-width: 520px) {
+    .nav-cta {
+      display: none;
+    }
+  }
+</style>

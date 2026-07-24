@@ -4,43 +4,143 @@ import type { TestimonialContent } from '../lib/domain/content';
 interface Props {
   content: TestimonialContent[];
 }
-
 const { content } = Astro.props;
+
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
 ---
 
 {
   content.length > 0 && (
-    <section class="testimonials">
-      {content.map((t) => (
-        <blockquote>
-          <p>“{t.quote}”</p>
-          <footer>
-            {t.authorName}
-            {t.authorRole && <span>, {t.authorRole}</span>}
-          </footer>
-        </blockquote>
-      ))}
+    <section class="section testimonials">
+      <div class="container">
+        <div class="t-head">
+          <span class="eyebrow" data-reveal>
+            Beta testers
+          </span>
+          <h2 class="section-title" data-reveal data-reveal-delay="1">
+            Ya sonando en <span class="gradient-text">sus oídos</span>
+          </h2>
+        </div>
+
+        <div class="t-grid">
+          {content.map((t, i) => (
+            <figure class="t-card" data-reveal data-reveal-delay={String((i % 3) + 1)}>
+              <span class="t-quote-mark" aria-hidden="true">
+                &ldquo;
+              </span>
+              <div class="t-stars" role="img" aria-label="5 de 5 estrellas">
+                {Array.from({ length: 5 }).map(() => (
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.9l-5.81 3.06 1.11-6.47-4.7-4.58 6.5-.95L12 2.5Z" />
+                  </svg>
+                ))}
+              </div>
+              <blockquote class="t-quote">{t.quote}</blockquote>
+              <figcaption class="t-author">
+                <span class="t-avatar" aria-hidden="true">
+                  {initials(t.authorName)}
+                </span>
+                <span class="t-meta">
+                  <span class="t-name">{t.authorName}</span>
+                  {t.authorRole && <span class="t-role">{t.authorRole}</span>}
+                </span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
 
 <style>
-  .testimonials {
-    display: grid;
-    gap: 1.5rem;
+  .t-head {
     max-width: 40rem;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
   }
-  blockquote {
+  .t-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+  }
+  .t-card {
+    position: relative;
     margin: 0;
-    padding: 1.25rem;
-    border-radius: 1rem;
-    background: rgba(245, 245, 247, 0.06);
+    padding: 2rem 1.75rem 1.75rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    transition:
+      transform 0.3s var(--ease),
+      border-color 0.3s var(--ease);
   }
-  blockquote footer {
-    margin-top: 0.5rem;
-    opacity: 0.6;
-    font-size: 0.9rem;
+  .t-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+  }
+  .t-quote-mark {
+    position: absolute;
+    top: 0.25rem;
+    right: 1.25rem;
+    font-family: var(--font-display);
+    font-size: 4.5rem;
+    line-height: 1;
+    color: var(--border-strong);
+    pointer-events: none;
+  }
+  .t-stars {
+    display: flex;
+    gap: 0.15rem;
+    color: var(--cyan-bright);
+  }
+  .t-stars svg {
+    width: 16px;
+    height: 16px;
+  }
+  .t-quote {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text);
+    line-height: 1.55;
+    flex: 1;
+  }
+  .t-author {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.25rem;
+  }
+  .t-avatar {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    color: #08040c;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex: 0 0 auto;
+  }
+  .t-name {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .t-role {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.82rem;
   }
 </style>

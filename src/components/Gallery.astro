@@ -5,31 +5,54 @@ import type { GalleryContent } from '../lib/domain/content';
 interface Props {
   content: GalleryContent | null;
 }
-
 const { content } = Astro.props;
 ---
 
 {
   content && content.images.length > 0 && (
-    <section class="gallery">
-      {content.images.map((image, i) => (
-        <img src={urlForImage(image).width(600).url()} alt={`KOA Buds — foto ${i + 1}`} loading="lazy" />
-      ))}
+    <section class="section gallery-cms">
+      <div class="container">
+        <span class="eyebrow" data-reveal>
+          Galería
+        </span>
+        <div class="gallery-grid">
+          {content.images.map((image, i) => (
+            <figure class="g-item" data-reveal data-reveal-delay={String((i % 3) + 1)}>
+              <img
+                src={urlForImage(image).width(800).height(600).fit('crop').url()}
+                alt={`KOA Buds — foto ${i + 1}`}
+                loading="lazy"
+                width="800"
+                height="600"
+              />
+            </figure>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
 
 <style>
-  .gallery {
+  .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: 1rem;
-    max-width: 60rem;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+    margin-top: 1.5rem;
   }
-  img {
+  .g-item {
+    margin: 0;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .g-item img {
     width: 100%;
-    border-radius: 1rem;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s var(--ease);
+  }
+  .g-item:hover img {
+    transform: scale(1.05);
   }
 </style>

@@ -1,5 +1,21 @@
 # Lecciones aprendidas
 
+## [2026-07-24] — Scroll-reveal (`opacity:0`) sobre contenido above-the-fold destruye el LCP
+**Contexto:** Rediseño visual de la landing. Se agregaron animaciones de scroll-reveal con `[data-reveal]` (arranca en `opacity:0`, un IntersectionObserver le agrega `.in-view` para hacer fade-in). Se aplicó también al Hero.
+**Error cometido:** Poner `data-reveal` en la imagen del Hero (el elemento LCP). Esa imagen quedaba invisible (`opacity:0`) hasta que: cargaba el bundle JS → el IntersectionObserver disparaba → agregaba la clase → completaba la transición de 0.7s. Lighthouse midió LCP en ~2.8-4.0s (objetivo ≤2.5s) — el fallo lo detectó el assert de Lighthouse en CI local, no a ojo.
+**Consecuencia evitada:** Shippear una página que "se ve bien" pero falla el presupuesto de performance del SRS §5 (LCP < 2.5s p75), bloqueando el merge por regresión de Lighthouse.
+**Corrección:** El contenido above-the-fold nunca debe depender de JS para volverse visible. Se quitó `data-reveal` de todo el Hero y se reemplazó por animaciones CSS puras que corren de inmediato (sin gate de JS). Clave: la imagen LCP se anima **solo con `transform`, nunca con `opacity`** — así queda "pintada" (visible para el cálculo de LCP) desde el primer frame, aunque todavía se esté deslizando. El `data-reveal` se reservó para secciones below-the-fold, donde el fade-in por scroll sí es correcto.
+**Regla para el futuro:** Animaciones de entrada gated por JS (IntersectionObserver, framer-motion, etc.) van solo below-the-fold. Para el hero: CSS inmediato, y el elemento LCP se anima con `transform`/`filter`, no con `opacity`. Verificar SIEMPRE el LCP con Lighthouse real después de agregar animaciones de entrada — el ojo no distingue 1.2s de 2.8s de LCP, la métrica sí.
+**Tags:** #testing #arquitectura
+
+## [2026-07-24] — `aria-label` en un elemento genérico (`<div>`/`<span>`) es una violación de accesibilidad
+**Contexto:** Rediseño. El rating de estrellas de los testimonios era un `<div class="t-stars" aria-label="5 de 5 estrellas">` con 5 SVGs decorativos adentro.
+**Error cometido:** Poner `aria-label` en un `<div>` sin rol. Un `<div>`/`<span>` tiene rol implícito `generic`, y el rol `generic` **prohíbe** `aria-label`/`aria-labelledby` (no expone un nombre accesible). axe-core y Lighthouse lo marcan como `aria-prohibited-attr` (severidad *serious*) — el test E2E de accesibilidad (`accessibility.spec.ts`, que falla ante violaciones serias) lo habría rebotado.
+**Consecuencia evitada:** Bajar el score de accesibilidad de 100 y romper el gate de axe-core del SRS §12.
+**Corrección:** Se agregó `role="img"` al div — el patrón estándar para un gráfico compuesto (varios SVG) que debe anunciarse como una sola imagen con su `aria-label` como texto alternativo. Con un rol explícito que sí admite nombre, `aria-label` es válido. (Nota: una `<section aria-label>` NO tiene este problema — al etiquetarla se convierte en landmark `region`, que sí admite nombre.)
+**Regla para el futuro:** `aria-label` solo va en elementos con un rol que lo admita (landmarks, `img`, `button`, `a`, inputs, elementos con `role` explícito). Nunca en un `<div>`/`<span>` "pelado". Si un contenedor genérico necesita nombre accesible, primero darle un `role`.
+**Tags:** #seguridad #testing
+
 ## [2026-07-24] — `useCdn: true` en build time sirve contenido cacheado y stale
 **Contexto:** Cargar contenido real en Sanity (`npm run sanity:seed`) y hacer build para verlo reflejado en el sitio.
 **Error cometido:** `sanityClient` (usado tanto en runtime como en build time) tenía `useCdn: true`. Se sembró contenido real y se corrió `npm run build` inmediatamente — el HTML resultante mostraba el fallback vacío para hero/problema/specs/testimonios, pero **sí** mostraba el contenido real de FAQ. Se esperó ~1 minuto extra y se corrió build de nuevo: mismo resultado, contenido vacío persistente en esos mismos tipos.

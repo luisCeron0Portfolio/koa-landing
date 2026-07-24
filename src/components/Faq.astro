@@ -4,44 +4,141 @@ import type { FaqItemContent } from '../lib/domain/content';
 interface Props {
   content: FaqItemContent[];
 }
-
 const { content } = Astro.props;
 ---
 
 {
   content.length > 0 && (
-    <section class="faq">
-      <h2>Preguntas frecuentes</h2>
-      {content.map((item) => (
-        <details>
-          <summary>{item.question}</summary>
-          <p>{item.answer}</p>
-        </details>
-      ))}
+    <section id="faq" class="section faq">
+      <div class="container faq-layout">
+        <div class="faq-intro">
+          <span class="eyebrow" data-reveal>
+            Preguntas frecuentes
+          </span>
+          <h2 class="section-title" data-reveal data-reveal-delay="1">
+            Todo lo que <span class="gradient-text">querés saber</span>
+          </h2>
+          <p class="lead" data-reveal data-reveal-delay="2">
+            ¿Te queda alguna duda? Escribinos y te respondemos antes del lanzamiento.
+          </p>
+        </div>
+
+        <div class="faq-list" data-reveal data-reveal-delay="1">
+          {content.map((item) => (
+            <details class="faq-item" name="faq">
+              <summary>
+                <span class="faq-q">{item.question}</span>
+                <span class="faq-icon" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </span>
+              </summary>
+              <div class="faq-answer">
+                <p>{item.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
 
 <style>
-  .faq {
-    max-width: 40rem;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+  .faq-layout {
+    display: grid;
+    gap: clamp(2rem, 5vw, 3.5rem);
+    align-items: start;
   }
-  h2 {
-    text-align: center;
-    margin: 0 0 1.5rem;
+  .faq-intro {
+    display: grid;
+    gap: 1rem;
   }
-  details {
-    border-bottom: 1px solid rgba(245, 245, 247, 0.15);
-    padding: 0.75rem 0;
+  .faq-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .faq-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 0.25s var(--ease);
+  }
+  .faq-item[open] {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
   }
   summary {
+    list-style: none;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    font-family: var(--font-display);
     font-weight: 600;
+    font-size: 1.05rem;
   }
-  details p {
-    margin: 0.5rem 0 0;
-    opacity: 0.75;
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: rgba(46, 230, 207, 0.1);
+    border: 1px solid rgba(46, 230, 207, 0.25);
+    color: var(--cyan-bright);
+    transition: transform 0.3s var(--ease);
+  }
+  .faq-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .faq-item[open] .faq-icon {
+    transform: rotate(135deg);
+  }
+  .faq-answer {
+    padding: 0 1.35rem 1.25rem;
+    color: var(--text-dim);
+  }
+  .faq-answer p {
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  /* Animación de apertura (mejora progresiva, ver interpolate-size en global) */
+  .faq-item::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 0.32s var(--ease),
+      content-visibility 0.32s allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+  .faq-item[open]::details-content {
+    block-size: auto;
+  }
+
+  @media (min-width: 880px) {
+    .faq-layout {
+      grid-template-columns: 0.85fr 1.15fr;
+    }
+    .faq-intro {
+      position: sticky;
+      top: 90px;
+    }
   }
 </style>

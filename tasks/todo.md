@@ -165,3 +165,46 @@ Decisión: no es un requisito técnico de ningún RF (GA4/Meta Pixel y WhatsApp 
 
 ## Próximo paso
 Commit + push del working tree completo (Build 1 a 5, código + SRS v0.2 + docs de gestión) — pedido explícito del usuario.
+
+---
+
+# Rediseño visual (2026-07-24)
+
+Pedido del usuario: hacer que la landing se vea como un producto vivo,
+tecnológico, actual y atractivo (referencias v0.app: energy-drink gen-z,
+AirPods Max showcase, launch timer, product card Apple-style).
+
+## Hecho
+- **Sistema de diseño** (`src/styles/global.css`): paleta neón cyan+magenta
+  sobre negro (derivada de la foto de producto), fuentes self-hosted (Space
+  Grotesk + Inter, `public/fonts/` — CSP `font-src` cae en `default-src 'self'`),
+  tokens, botones, chips, utilidades y clases de scroll-reveal.
+- **Imágenes de producto** (Unsplash License) optimizadas vía `astro:assets`
+  → webp responsive servido desde 'self' (CSP `img-src 'self'`). Créditos en
+  `src/assets/CREDITS.md`.
+- **Componentes nuevos**: `SiteNav` (sticky + blur), `Countdown` (lanzamiento,
+  "producto vivo"), `Showcase` (bento gallery art-directed).
+- **Rediseñados**: Hero (full-viewport, imagen neón, gradiente, orbes),
+  ProblemSection (statement editorial), Specs (feature cards + iconos SVG),
+  Testimonials (cards con avatar/estrellas), FAQ (acordeón animado nativo),
+  waitlist (card con glow), Footer, SocialProofCounter (count-up).
+- **Formulario React**: solo estilos (clases `.wl-*` en global.css) — campos,
+  honeypot, Turnstile, dataLayer y lógica intactos.
+- **Scroll-reveal** con IntersectionObserver (CSP-safe, hasheado; respeta
+  `prefers-reduced-motion`).
+
+## Verificado
+- `tsc` + `astro check` 0 errores · `npm run lint` limpio.
+- **Lighthouse (build real): Performance 99, Accessibility 100, Best
+  Practices 96, SEO 100, LCP 2043ms, CLS 0.**
+- E2E **7/7** (incluida accesibilidad axe con el diseño nuevo).
+- gitleaks limpio (solo `.env`, gitignored). Screenshot desktop+mobile
+  revisado a ojo.
+- Dos bugs reales encontrados por Lighthouse/axe y corregidos — ver
+  `tasks/lessons.md` (LCP por reveal en el hero, `aria-label` en `<div>`).
+
+## Sin cambios de contrato
+No se tocó ningún endpoint, schema de Sanity, ni la CSP. El contenido sigue
+viniendo de Sanity (texto editable); las imágenes de producto son assets
+locales art-directed (el campo `productImage`/`gallery` de Sanity sigue
+soportado y es aditivo).

@@ -1,0 +1,427 @@
+/* ============================================================
+   KOA Buds — sistema de diseño
+   Paleta derivada de la fotografía de producto (neón cyan +
+   magenta sobre negro). Fuentes self-hosted (CSP: font-src cae
+   en default-src 'self', así que deben ser mismo-origen).
+   ============================================================ */
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Fondo / superficies */
+  --bg: #060608;
+  --bg-2: #0b0b11;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  /* Texto — todos verificados AA sobre --bg */
+  --text: #f4f4f7;
+  --text-dim: #b6b6c2; /* ~9:1 */
+  --text-muted: #9a9aa8; /* ~6.3:1 */
+
+  /* Acentos de marca */
+  --cyan: #2ee6cf;
+  --cyan-bright: #67f5e4;
+  --magenta: #ff2d92;
+  --magenta-bright: #ff6bb4;
+  --violet: #a06bff;
+
+  --grad-brand: linear-gradient(120deg, var(--cyan) 0%, var(--violet) 52%, var(--magenta) 100%);
+  --grad-brand-rev: linear-gradient(120deg, var(--magenta) 0%, var(--violet) 48%, var(--cyan) 100%);
+  --grad-text: linear-gradient(100deg, var(--cyan-bright) 0%, #d7c4ff 40%, var(--magenta-bright) 100%);
+
+  --radius: 16px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+  --pill: 999px;
+
+  --shadow-soft: 0 24px 60px -30px rgba(0, 0, 0, 0.9);
+  --glow-cyan: 0 0 90px -20px rgba(46, 230, 207, 0.55);
+  --glow-magenta: 0 0 90px -20px rgba(255, 45, 146, 0.55);
+
+  --maxw: 1180px;
+  --gutter: clamp(1.25rem, 5vw, 3rem);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  color-scheme: dark;
+  /* Permite animar height:auto (acordeón FAQ). Navegadores sin soporte
+     simplemente abren/cierran de golpe — mejora progresiva. */
+  interpolate-size: allow-keywords;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Fondo global: aurora sutil fija detrás de todo */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60vw 60vw at 12% -5%, rgba(46, 230, 207, 0.12), transparent 60%),
+    radial-gradient(55vw 55vw at 100% 8%, rgba(255, 45, 146, 0.12), transparent 60%),
+    radial-gradient(70vw 50vw at 50% 110%, rgba(160, 107, 255, 0.1), transparent 60%);
+  pointer-events: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--magenta);
+  color: #fff;
+}
+
+/* ---------- utilidades de layout ---------- */
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  padding-block: clamp(4rem, 10vw, 8rem);
+  position: relative;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cyan-bright);
+}
+.eyebrow::before {
+  content: '';
+  width: 1.75rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+}
+
+.section-title {
+  font-size: clamp(2rem, 5.5vw, 3.6rem);
+  margin-top: 1rem;
+}
+
+.gradient-text {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lead {
+  color: var(--text-dim);
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+  max-width: 46ch;
+}
+
+/* ---------- botones ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  padding: 0.95rem 1.6rem;
+  border-radius: var(--pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.25s var(--ease),
+    box-shadow 0.35s var(--ease),
+    background 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+  will-change: transform;
+}
+.btn-primary {
+  background: var(--grad-brand);
+  color: #08040c;
+  box-shadow: 0 10px 40px -12px rgba(255, 45, 146, 0.5);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 50px -12px rgba(255, 45, 146, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+.btn-ghost {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border-strong);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+}
+
+/* chip / badge de vidrio */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  backdrop-filter: blur(10px);
+}
+.chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px 1px var(--cyan);
+}
+
+.card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ---------- scroll reveal (CSP-safe, activado por IntersectionObserver) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.7s var(--ease),
+      transform 0.7s var(--ease);
+  }
+  [data-reveal].in-view {
+    opacity: 1;
+    transform: none;
+  }
+  [data-reveal][data-reveal-delay='1'] {
+    transition-delay: 0.08s;
+  }
+  [data-reveal][data-reveal-delay='2'] {
+    transition-delay: 0.16s;
+  }
+  [data-reveal][data-reveal-delay='3'] {
+    transition-delay: 0.24s;
+  }
+  [data-reveal][data-reveal-delay='4'] {
+    transition-delay: 0.32s;
+  }
+}
+
+/* honeypot del WaitlistForm — clase, no `style` inline (CSP style-src-attr) */
+.visually-hidden {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ============================================================
+   Formulario de waitlist (React island → estilos globales)
+   ============================================================ */
+.wl-form {
+  display: grid;
+  gap: 1.1rem;
+  text-align: left;
+}
+.wl-field {
+  display: grid;
+  gap: 0.4rem;
+}
+.wl-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.wl-optional {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.wl-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+  transition:
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    box-shadow 0.2s var(--ease);
+}
+.wl-input::placeholder {
+  color: var(--text-muted);
+}
+.wl-input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(46, 230, 207, 0.18);
+}
+.wl-input[aria-invalid='true'] {
+  border-color: var(--magenta);
+  box-shadow: 0 0 0 3px rgba(255, 45, 146, 0.16);
+}
+.wl-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  cursor: pointer;
+}
+.wl-checkbox {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+  accent-color: var(--magenta);
+  cursor: pointer;
+}
+.wl-turnstile:empty {
+  display: none;
+}
+.wl-error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--magenta-bright);
+}
+.wl-alert {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(255, 45, 146, 0.1);
+  border: 1px solid rgba(255, 45, 146, 0.3);
+  color: var(--magenta-bright);
+  font-size: 0.88rem;
+}
+.wl-submit {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+.wl-submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.wl-fineprint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.wl-success {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 1rem 0;
+}
+.wl-success-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  color: #08040c;
+  margin-bottom: 0.4rem;
+}
+.wl-success-icon svg {
+  width: 28px;
+  height: 28px;
+}
+.wl-success-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  margin: 0;
+}
+.wl-success-text {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  margin: 0;
+  max-width: 34ch;
+}

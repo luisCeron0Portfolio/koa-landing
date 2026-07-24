@@ -1,0 +1,149 @@
+---
+// Fecha de lanzamiento estimada de la demo. En un proyecto real vendría de
+// Sanity; acá es una constante para dar el efecto de "producto vivo" (RF).
+const LAUNCH_ISO = '2026-09-19T12:00:00-05:00';
+const launchDate = new Date(LAUNCH_ISO);
+const humanDate = new Intl.DateTimeFormat('es-CO', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(launchDate);
+
+const units = [
+  { key: 'd', label: 'días' },
+  { key: 'h', label: 'horas' },
+  { key: 'm', label: 'min' },
+  { key: 's', label: 'seg' },
+];
+---
+
+<section class="countdown-band" aria-label="Cuenta regresiva para el lanzamiento">
+  <div class="container cd-inner card" data-reveal>
+    <div class="cd-head">
+      <span class="eyebrow">Lanzamiento estimado</span>
+      <p class="cd-date">{humanDate}</p>
+    </div>
+
+    <div class="cd-clock" data-countdown data-launch={LAUNCH_ISO} aria-hidden="true">
+      {
+        units.map((u, i) => (
+          <>
+            {i > 0 && <span class="cd-sep">:</span>}
+            <div class="cd-unit">
+              <span class="cd-num" data-unit={u.key}>
+                --
+              </span>
+              <span class="cd-label">{u.label}</span>
+            </div>
+          </>
+        ))
+      }
+    </div>
+
+    <a href="#waitlist" class="btn btn-primary cd-cta">Reservar mi lugar</a>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-countdown]');
+  if (root) {
+    const target = new Date(root.dataset.launch ?? '').getTime();
+    const out: Record<string, HTMLElement | null> = {
+      d: root.querySelector('[data-unit="d"]'),
+      h: root.querySelector('[data-unit="h"]'),
+      m: root.querySelector('[data-unit="m"]'),
+      s: root.querySelector('[data-unit="s"]'),
+    };
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const tick = () => {
+      const diff = Math.max(0, target - Date.now());
+      const days = Math.floor(diff / 86_400_000);
+      const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+      const mins = Math.floor((diff % 3_600_000) / 60_000);
+      const secs = Math.floor((diff % 60_000) / 1000);
+      if (out.d) out.d.textContent = pad(days);
+      if (out.h) out.h.textContent = pad(hours);
+      if (out.m) out.m.textContent = pad(mins);
+      if (out.s) out.s.textContent = pad(secs);
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+</script>
+
+<style>
+  .countdown-band {
+    padding-block: 0;
+    margin-top: -2rem;
+    position: relative;
+    z-index: 2;
+  }
+  .cd-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 2rem;
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  }
+  .cd-date {
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 3vw, 1.6rem);
+    font-weight: 600;
+    margin-top: 0.4rem;
+    text-transform: capitalize;
+  }
+  .cd-clock {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .cd-unit {
+    display: grid;
+    justify-items: center;
+    min-width: 3.4rem;
+  }
+  .cd-num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.8rem, 5vw, 2.9rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .cd-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+  }
+  .cd-sep {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    line-height: 1;
+    color: var(--border-strong);
+    padding-top: 0.15em;
+  }
+  .cd-cta {
+    flex: 0 0 auto;
+  }
+  @media (max-width: 640px) {
+    .cd-inner {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+    }
+    .cd-clock {
+      justify-content: center;
+    }
+    .cd-cta {
+      justify-content: center;
+    }
+  }
+</style>

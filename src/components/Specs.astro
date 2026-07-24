@@ -4,51 +4,158 @@ import type { SpecsSectionContent } from '../lib/domain/content';
 interface Props {
   content: SpecsSectionContent | null;
 }
-
 const { content } = Astro.props;
+
+// Elige un icono según palabras clave del label (el contenido viene de Sanity,
+// así que no podemos asumir un orden fijo). Fallback: icono genérico.
+type IconKey = 'noise' | 'battery' | 'water' | 'bluetooth' | 'case' | 'spark';
+function iconFor(label: string): IconKey {
+  const l = label.toLowerCase();
+  if (/(ruido|cancel|anc|sonid|audio)/.test(l)) return 'noise';
+  if (/(autonom|bater|hora|carga)/.test(l)) return 'battery';
+  if (/(agua|resist|ipx|sudor)/.test(l)) return 'water';
+  if (/(bluetooth|conect|inal[aá]mbric|se[ñn]al)/.test(l)) return 'bluetooth';
+  if (/(estuche|case|caja)/.test(l)) return 'case';
+  return 'spark';
+}
 ---
 
 {
   content && (
-    <section class="specs">
-      <h2>{content.heading}</h2>
-      <dl>
-        {content.items.map((item) => (
-          <div>
-            <dt>{item.label}</dt>
-            <dd>{item.value}</dd>
-          </div>
-        ))}
-      </dl>
+    <section id="specs" class="section specs">
+      <div class="container">
+        <div class="specs-head">
+          <span class="eyebrow" data-reveal>
+            Ingeniería
+          </span>
+          <h2 class="section-title" data-reveal data-reveal-delay="1">
+            {content.heading}
+          </h2>
+        </div>
+
+        <ul class="specs-grid">
+          {content.items.map((item, i) => (
+            <li class="spec-card" data-reveal data-reveal-delay={String((i % 4) + 1)}>
+              <span class="spec-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  {iconFor(item.label) === 'noise' && (
+                    <>
+                      <path d="M4 12h2l2-5 4 14 3-9 1.5 4H20" />
+                    </>
+                  )}
+                  {iconFor(item.label) === 'battery' && (
+                    <>
+                      <rect x="3" y="8" width="14" height="9" rx="2" />
+                      <path d="M20 11v3" />
+                      <path d="M7 12.5l2.2 0M9 10.8v3.4" />
+                    </>
+                  )}
+                  {iconFor(item.label) === 'water' && (
+                    <>
+                      <path d="M12 3s6 6.4 6 10.5A6 6 0 0 1 6 13.5C6 9.4 12 3 12 3Z" />
+                    </>
+                  )}
+                  {iconFor(item.label) === 'bluetooth' && (
+                    <>
+                      <path d="M7 8l10 8-5 4V4l5 4L7 16" />
+                    </>
+                  )}
+                  {iconFor(item.label) === 'case' && (
+                    <>
+                      <rect x="4" y="9" width="16" height="10" rx="3" />
+                      <path d="M8 9V7a4 4 0 0 1 8 0v2" />
+                    </>
+                  )}
+                  {iconFor(item.label) === 'spark' && (
+                    <>
+                      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />
+                    </>
+                  )}
+                </svg>
+              </span>
+              <span class="spec-value">{item.value}</span>
+              <span class="spec-label">{item.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   )
 }
 
 <style>
-  .specs {
+  .specs-head {
     max-width: 40rem;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
   }
-  h2 {
-    text-align: center;
-    margin: 0 0 1.5rem;
-  }
-  dl {
+  .specs-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: 1rem;
   }
-  dl > div {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(245, 245, 247, 0.15);
-    padding-bottom: 0.75rem;
+  .spec-card {
+    position: relative;
+    padding: 1.75rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition:
+      transform 0.3s var(--ease),
+      border-color 0.3s var(--ease);
   }
-  dt {
-    opacity: 0.7;
+  .spec-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 80% at 0% 0%, rgba(46, 230, 207, 0.12), transparent 55%);
+    opacity: 0;
+    transition: opacity 0.3s var(--ease);
   }
-  dd {
-    margin: 0;
+  .spec-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+  }
+  .spec-card:hover::before {
+    opacity: 1;
+  }
+  .spec-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: rgba(46, 230, 207, 0.1);
+    border: 1px solid rgba(46, 230, 207, 0.25);
+    color: var(--cyan-bright);
+    margin-bottom: 1.25rem;
+  }
+  .spec-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .spec-value {
+    display: block;
+    font-family: var(--font-display);
     font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .spec-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.35rem;
   }
 </style>

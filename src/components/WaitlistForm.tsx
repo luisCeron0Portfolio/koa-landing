@@ -148,11 +148,30 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
   }
 
   if (state.status === 'success') {
-    return <p role="status">¡Listo! Revisá tu email para confirmar tu lugar en la lista de espera.</p>;
+    return (
+      <div className="wl-success" role="status">
+        <span className="wl-success-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </span>
+        <p className="wl-success-title">¡Estás en la lista!</p>
+        <p className="wl-success-text">
+          Revisá tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form className="wl-form" onSubmit={handleSubmit} noValidate>
       {/* Honeypot: oculto vía CSS (no `hidden`), SRS §5. Un humano nunca lo ve ni lo completa.
           Clase en vez de `style` inline: un atributo `style=""` cae bajo
           style-src-attr, que el hash de <style> de Astro no cubre — con CSP
@@ -162,37 +181,56 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         <input id={`${formId}-company`} name="company_website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
-      <div>
-        <label htmlFor={`${formId}-name`}>Nombre</label>
+      <div className="wl-field">
+        <label className="wl-label" htmlFor={`${formId}-name`}>
+          Nombre
+        </label>
         <input
+          className="wl-input"
           id={`${formId}-name`}
           name="name"
           type="text"
           required
+          placeholder="Tu nombre"
           value={name}
           onChange={(e) => setName(e.target.value)}
           aria-invalid={Boolean(fieldErrors.name)}
         />
-        {fieldErrors.name && <p role="alert">{fieldErrors.name}</p>}
+        {fieldErrors.name && (
+          <p className="wl-error" role="alert">
+            {fieldErrors.name}
+          </p>
+        )}
       </div>
 
-      <div>
-        <label htmlFor={`${formId}-email`}>Email</label>
+      <div className="wl-field">
+        <label className="wl-label" htmlFor={`${formId}-email`}>
+          Email
+        </label>
         <input
+          className="wl-input"
           id={`${formId}-email`}
           name="email"
           type="email"
           required
+          placeholder="vos@ejemplo.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           aria-invalid={Boolean(fieldErrors.email)}
         />
-        {fieldErrors.email && <p role="alert">{fieldErrors.email}</p>}
+        {fieldErrors.email && (
+          <p className="wl-error" role="alert">
+            {fieldErrors.email}
+          </p>
+        )}
       </div>
 
-      <div>
-        <label htmlFor={`${formId}-phone`}>Teléfono (opcional, para WhatsApp)</label>
+      <div className="wl-field">
+        <label className="wl-label" htmlFor={`${formId}-phone`}>
+          Teléfono <span className="wl-optional">(opcional, para WhatsApp)</span>
+        </label>
         <input
+          className="wl-input"
           id={`${formId}-phone`}
           name="phone"
           type="tel"
@@ -201,34 +239,53 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
           onChange={(e) => setPhone(e.target.value)}
           aria-invalid={Boolean(fieldErrors.phone)}
         />
-        {fieldErrors.phone && <p role="alert">{fieldErrors.phone}</p>}
+        {fieldErrors.phone && (
+          <p className="wl-error" role="alert">
+            {fieldErrors.phone}
+          </p>
+        )}
       </div>
 
-      <div>
-        <label>
+      <div className="wl-field">
+        <label className="wl-consent">
           <input
+            className="wl-checkbox"
             type="checkbox"
             name="consent"
             required
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
-          />{' '}
-          Acepto que KOA Buds use mi nombre y correo para notificarme sobre el lanzamiento del producto, según
-          la Ley 1581 de 2012.
+          />
+          <span>
+            Acepto que KOA Buds use mi nombre y correo para notificarme sobre el lanzamiento del producto,
+            según la Ley 1581 de 2012.
+          </span>
         </label>
-        {fieldErrors.consent && <p role="alert">{fieldErrors.consent}</p>}
+        {fieldErrors.consent && (
+          <p className="wl-error" role="alert">
+            {fieldErrors.consent}
+          </p>
+        )}
       </div>
 
-      <div ref={turnstileRef} />
+      <div className="wl-turnstile" ref={turnstileRef} />
 
       {state.status === 'rate_limited' && (
-        <p role="alert">Demasiados intentos. Probá de nuevo en {Math.ceil(state.retryAfter / 60)} minutos.</p>
+        <p className="wl-alert" role="alert">
+          Demasiados intentos. Probá de nuevo en {Math.ceil(state.retryAfter / 60)} minutos.
+        </p>
       )}
-      {state.status === 'error' && <p role="alert">{state.message}</p>}
+      {state.status === 'error' && (
+        <p className="wl-alert" role="alert">
+          {state.message}
+        </p>
+      )}
 
-      <button type="submit" disabled={state.status === 'submitting'}>
+      <button className="btn btn-primary wl-submit" type="submit" disabled={state.status === 'submitting'}>
         {state.status === 'submitting' ? 'Enviando…' : 'Unirme a la lista de espera'}
       </button>
+
+      <p className="wl-fineprint">Sin spam. Podés darte de baja cuando quieras.</p>
     </form>
   );
 }

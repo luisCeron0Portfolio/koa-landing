@@ -1,8 +1,12 @@
 ---
+import '../styles/global.css';
 import { sanityClient } from '../lib/adapters/sanity';
+import SiteNav from '../components/SiteNav.astro';
 import Hero from '../components/Hero.astro';
+import Countdown from '../components/Countdown.astro';
 import ProblemSection from '../components/ProblemSection.astro';
 import Specs from '../components/Specs.astro';
+import Showcase from '../components/Showcase.astro';
 import Gallery from '../components/Gallery.astro';
 import Testimonials from '../components/Testimonials.astro';
 import Faq from '../components/Faq.astro';
@@ -21,7 +25,7 @@ import type {
 } from '../lib/domain/content';
 
 // Contenido editorial (SRS §9) — se resuelve en build time; una publicación
-// nueva en Sanity Studio requiere un rebuild (Build 3: webhook → Vercel).
+// nueva en Sanity Studio dispara un rebuild vía webhook (Build 3).
 const [hero, problemContext, specs, gallery, testimonials, faqItems, footer] = await Promise.all([
   sanityClient.fetch<HeroContent | null>('*[_type == "hero"][0]'),
   sanityClient.fetch<ProblemContextContent | null>('*[_type == "problemContext"][0]'),
@@ -38,6 +42,11 @@ const utm = {
   campaign: Astro.url.searchParams.get('utm_campaign'),
 };
 
+const productName = hero?.productName ?? 'KOA Buds';
+const ctaLabel = hero?.ctaLabel ?? 'Unirme a la lista de espera';
+const description =
+  problemContext?.body ??
+  'Sumate a la lista de espera de KOA Buds, audífonos true wireless con cancelación de ruido activa.';
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
@@ -45,63 +54,140 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <meta
-      name="description"
-      content={problemContext?.body ??
-        'Sumate a la lista de espera de KOA Buds, audífonos true wireless con cancelación de ruido activa.'}
-    />
-    <title>{hero?.productName ?? 'KOA Buds'} — Lista de espera</title>
+    <meta name="theme-color" content="#060608" />
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${productName} — Lista de espera`} />
+    <meta property="og:description" content={description} />
+    <link rel="preload" href="/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <title>{productName} — Audífonos true wireless · Lista de espera</title>
   </head>
   <body>
     <GtmSnippet />
 
-    <Hero content={hero} />
-    <ProblemSection content={problemContext} />
-    <Specs content={specs} />
-    <Gallery content={gallery} />
-    <Testimonials content={testimonials ?? []} />
-    <Faq content={faqItems ?? []} />
+    <SiteNav productName={productName} ctaLabel={ctaLabel} />
 
-    <section id="waitlist" class="waitlist">
-      <h2>Unite a la lista de espera</h2>
-      <SocialProofCounter />
-      <WaitlistForm client:load turnstileSiteKey={turnstileSiteKey} />
-    </section>
+    <main>
+      <Hero content={hero} />
+      <Countdown />
+      <ProblemSection content={problemContext} />
+      <Specs content={specs} />
+      <Showcase />
+      <Gallery content={gallery} />
+      <Testimonials content={testimonials ?? []} />
+      <Faq content={faqItems ?? []} />
 
-    <SiteFooter content={footer} utm={utm} />
+      <section id="waitlist" class="section waitlist">
+        <div class="container waitlist-card" data-reveal>
+          <div class="waitlist-copy">
+            <span class="eyebrow">Lista de espera</span>
+            <h2 class="section-title">
+              Asegurá tu par <span class="gradient-text">antes que nadie</span>
+            </h2>
+            <p class="lead">
+              Dejanos tu email y sé de los primeros en recibir el lanzamiento, con precio de preventa
+              exclusivo.
+            </p>
+            <ul class="waitlist-perks">
+              <li>Acceso anticipado al lanzamiento</li>
+              <li>Precio de preventa exclusivo</li>
+              <li>Cero spam — solo el aviso que importa</li>
+            </ul>
+            <SocialProofCounter />
+          </div>
+
+          <div class="waitlist-form-wrap">
+            <WaitlistForm client:load turnstileSiteKey={turnstileSiteKey} />
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter content={footer} utm={utm} productName={productName} />
+
+    <script>
+      // Scroll-reveal con IntersectionObserver — CSP-safe (static → hasheado).
+      const els = document.querySelectorAll('[data-reveal]');
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduce && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+        );
+        els.forEach((el) => io.observe(el));
+      } else {
+        els.forEach((el) => el.classList.add('in-view'));
+      }
+    </script>
+
+    <style>
+      .waitlist-card {
+        display: grid;
+        gap: clamp(2rem, 5vw, 3.5rem);
+        align-items: center;
+        padding: clamp(1.75rem, 5vw, 3.5rem);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-strong);
+        background:
+          radial-gradient(90% 120% at 0% 0%, rgba(46, 230, 207, 0.1), transparent 55%),
+          radial-gradient(90% 120% at 100% 100%, rgba(255, 45, 146, 0.1), transparent 55%),
+          linear-gradient(180deg, var(--surface-2), var(--surface));
+        box-shadow: var(--shadow-soft);
+      }
+      .waitlist-copy .section-title {
+        margin-top: 1rem;
+      }
+      .waitlist-copy .lead {
+        margin-top: 1rem;
+      }
+      .waitlist-perks {
+        list-style: none;
+        padding: 0;
+        margin: 1.75rem 0;
+        display: grid;
+        gap: 0.7rem;
+      }
+      .waitlist-perks li {
+        position: relative;
+        padding-left: 1.9rem;
+        color: var(--text-dim);
+        font-size: 0.95rem;
+      }
+      .waitlist-perks li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.05rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 50%;
+        background: var(--grad-brand);
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E")
+          center / 0.8rem no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E")
+          center / 0.8rem no-repeat;
+      }
+      .waitlist-form-wrap {
+        padding: clamp(1.5rem, 4vw, 2rem);
+        border-radius: var(--radius-lg);
+        background: rgba(6, 6, 8, 0.55);
+        border: 1px solid var(--border);
+      }
+      @media (min-width: 900px) {
+        .waitlist-card {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
   </body>
 </html>
-
-<style is:global>
-  :root {
-    color-scheme: dark;
-  }
-  body {
-    margin: 0;
-    font-family: system-ui, sans-serif;
-    background: #0b0b0f;
-    color: #f5f5f7;
-  }
-  /* Honeypot de WaitlistForm — clase en vez de `style` inline (CSP style-src-attr). */
-  .visually-hidden {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-  }
-</style>
-
-<style>
-  .waitlist {
-    max-width: 28rem;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
-    text-align: center;
-  }
-  .waitlist h2 {
-    margin-bottom: 1.5rem;
-  }
-</style>
