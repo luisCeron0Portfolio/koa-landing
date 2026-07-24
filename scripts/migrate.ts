@@ -17,12 +17,17 @@ const files = (await readdir(dir)).filter((f: string) => f.endsWith('.sql')).sor
 // El driver HTTP de Neon ejecuta una sentencia por round-trip (protocolo
 // extendido) — no acepta varias sentencias separadas por ';' en una sola
 // llamada. Las migraciones de este proyecto no usan ';' dentro de literales,
-// así que separar por ';' de fin de línea es seguro.
+// así que quitar comentarios de línea completa y separar por ';' es seguro.
 function splitStatements(fileContents: string): string[] {
-  return fileContents
-    .split(/;\s*\n/)
+  const withoutComments = fileContents
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n');
+
+  return withoutComments
+    .split(';')
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith('--'));
+    .filter((s) => s.length > 0);
 }
 
 for (const file of files) {

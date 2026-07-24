@@ -1,0 +1,35 @@
+---
+import { urlForImage } from '../lib/adapters/sanity';
+import type { GalleryContent } from '../lib/domain/content';
+
+interface Props {
+  content: GalleryContent | null;
+}
+
+const { content } = Astro.props;
+---
+
+{
+  content && content.images.length > 0 && (
+    <section class="gallery">
+      {content.images.map((image, i) => (
+        <img src={urlForImage(image).width(600).url()} alt={`KOA Buds — foto ${i + 1}`} loading="lazy" />
+      ))}
+    </section>
+  )
+}
+
+<style>
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    max-width: 60rem;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  img {
+    width: 100%;
+    border-radius: 1rem;
+  }
+</style>

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Secrets scanning en pre-commit (CLAUDE.md — no opcional). Best-effort: si
+# gitleaks no está instalado localmente, avisa y deja pasar — el gate real
+# y obligatorio es el job "secrets-scan" en CI (.github/workflows/ci.yml).
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "⚠️  gitleaks no está instalado — se salta el scan local (CI igual lo corre)." >&2
+  echo "   Instalar: https://github.com/gitleaks/gitleaks#installing" >&2
+  exit 0
+fi
+
+gitleaks protect --staged --no-banner -v

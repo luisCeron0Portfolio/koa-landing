@@ -1,0 +1,52 @@
+---
+import { urlForImage } from '../lib/adapters/sanity';
+import type { HeroContent } from '../lib/domain/content';
+
+interface Props {
+  content: HeroContent | null;
+}
+
+const { content } = Astro.props;
+const imageUrl = content?.productImage ? urlForImage(content.productImage).width(800).url() : null;
+---
+
+<section class="hero">
+  <div>
+    <h1>{content?.productName ?? 'KOA Buds'}</h1>
+    <p>{content?.valueProposition ?? 'La lista de espera abre pronto.'}</p>
+    <a href="#waitlist">{content?.ctaLabel ?? 'Unirme a la lista de espera'}</a>
+  </div>
+  {imageUrl && <img src={imageUrl} alt={content?.productName ?? 'KOA Buds'} width="400" />}
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    gap: 2rem;
+    place-items: center;
+    text-align: center;
+    padding: 4rem 1.5rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 4rem);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
+  }
+  p {
+    opacity: 0.75;
+    margin: 0 0 1.5rem;
+  }
+  a {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    background: #f5f5f7;
+    color: #0b0b0f;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  img {
+    max-width: 100%;
+    border-radius: 1.5rem;
+  }
+</style>

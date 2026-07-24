@@ -1,8 +1,8 @@
 # SRS — Landing Page: KOA Buds (Demo completa — técnico + instancia)
-**Versión:** 0.1
-**Fecha:** 2026-07-23
+**Versión:** 0.2
+**Fecha:** 2026-07-24
 **Autor:** [Usuario] | **Revisor técnico:** Arch-Sentinel
-**Estado:** Borrador — pendiente de aprobación
+**Estado:** Builds 1-3 y 5 implementados y verificados; Build 4 parcial (ver §11)
 
 > **Nota de procedencia:** este documento es una instancia autocontenida, derivada de `SRS-landing-page-core.md` v0.1. El core sigue siendo la fuente de verdad del template reutilizable para futuros proyectos de la agencia. Si el core cambia, este documento no se actualiza automáticamente — es un snapshot de la demo KOA Buds en este punto en el tiempo.
 
@@ -222,7 +222,9 @@ CMS: editor edita en Sanity Studio → webhook → rebuild en Vercel
 | GTM/GA4/Meta Pixel | Analítica de campaña | Propiedad y cuenta de **test**, separada de cualquier cliente real | Nonce vía CSP |
 | Cloudflare Turnstile | Anti-bot | Sitekey de demo | Gratuito |
 | WhatsApp | CTA de contacto | Número de prueba de la agencia | Click-to-chat, sin Business API |
-| Dominio | Hosting público | `demo-koabuds.[dominio-de-la-agencia]` — `[PENDIENTE]` | — |
+| Dominio | Hosting público | `demo-landing-delta.vercel.app` (subdominio de Vercel) — decisión final, ver nota abajo | — |
+
+**Nota sobre el dominio (resuelve el `[PENDIENTE]` original):** un dominio propio de la agencia no es un requisito técnico de ningún RF — es un subdominio HTTPS público real, GA4/Meta Pixel funcionan igual (un solo origen, sin complicaciones de cross-domain) y el CTA de WhatsApp (RF-003) no depende del dominio en absoluto. La necesidad de un dominio propio era de marca/presentación para mostrarle a prospectos, no funcional. Se decide usar el subdominio de Vercel como definitivo para esta demo — Build 4 deja de estar bloqueado por este ítem. (El dominio verificado con SPF/DKIM de **Resend**, fila de arriba, es un tema aparte — sigue pendiente porque afecta entregabilidad real de email, no hosting; ver R-05.)
 
 ---
 
@@ -266,7 +268,7 @@ CMS: editor edita en Sanity Studio → webhook → rebuild en Vercel
 **Entregables verificables:** editar un bloque en Sanity se refleja en producción en < 2 min sin intervención de developer.
 
 ### Build 4: Integraciones externas
-**Entregables verificables:** conversión visible en GA4 DebugView y Meta Pixel Helper; WhatsApp abre con mensaje prellenado y UTMs propagados. **Bloqueado por:** dominio real de la agencia (§8, PENDIENTE).
+**Entregables verificables:** conversión visible en GA4 DebugView y Meta Pixel Helper; WhatsApp abre con mensaje prellenado y UTMs propagados. Ya no bloqueado por dominio (§8 — se usa el subdominio de Vercel). Pendiente configurar tags de GA4/Meta Pixel dentro del container de GTM (dashboard, fuera de este repo) y el número real de WhatsApp de prueba de la agencia (RF-003, contenido en Sanity).
 
 ### Build 5: Hardening final
 **Entregables verificables:** securityheaders.com reporta A/A+; CSP bloquea payload XSS de prueba; SAST + secrets scan limpios en CI; Lighthouse ≥ 90 en Performance/Best Practices/SEO.
@@ -293,7 +295,7 @@ CMS: editor edita en Sanity Studio → webhook → rebuild en Vercel
 | R-02 | Contador social proof expone velocidad real de campaña | Media | Bajo | Cache con delay ≥ 15 min | Dev |
 | R-03 | Token de Sanity con permisos de escritura expuesto en cliente | Baja | Alto | Token read-only en build, write-only server-side | Dev |
 | R-04 | Incumplimiento de Habeas Data por falta de consentimiento trazable | Media | Alto | Checkbox no premarcado + versión de texto registrada | PM |
-| R-05 | Emails de confirmación caen en spam por dominio no verificado | Alta (mientras §8 esté PENDIENTE) | Alto | Verificar SPF/DKIM antes de Build 4 | Dev |
+| R-05 | Emails de confirmación caen en spam por dominio de Resend no verificado (sigue en dominio sandbox `onboarding@resend.dev`) | Alta | Alto | Verificar SPF/DKIM en un dominio propio para Resend — independiente del dominio de hosting (§8) | Dev |
 
 ---
 
@@ -329,3 +331,4 @@ CMS: editor edita en Sanity Studio → webhook → rebuild en Vercel
 | Versión | Fecha | Autor | Cambios |
 |---------|-------|-------|---------|
 | 0.1 | 2026-07-23 | Usuario + Arch-Sentinel | Combinación de core + instancia en documento único |
+| 0.2 | 2026-07-24 | Usuario + Claude | Resuelto el `[PENDIENTE]` de dominio de hosting (§8): no es un requisito técnico de ningún RF, se adopta el subdominio de Vercel como definitivo — desbloquea Build 4. Aclarado que el dominio de Resend (SPF/DKIM, R-05) es un tema aparte y sigue pendiente. Builds 1, 2, 3 y 5 implementados y verificados contra Neon/Sanity/Upstash/Resend/Turnstile/GTM reales (detalle completo en `tasks/todo.md` y `tasks/lessons.md` del repo). |

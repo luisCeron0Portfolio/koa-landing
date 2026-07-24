@@ -5,7 +5,12 @@ export default defineType({
   title: 'Especificaciones técnicas',
   type: 'document',
   fields: [
-    defineField({ name: 'heading', title: 'Título de la sección', type: 'string', validation: (r) => r.required() }),
+    defineField({
+      name: 'heading',
+      title: 'Título de la sección',
+      type: 'string',
+      validation: (r) => r.required(),
+    }),
     defineField({
       name: 'items',
       title: 'Especificaciones',

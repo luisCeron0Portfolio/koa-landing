@@ -7,12 +7,20 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
+    "dev": "node --env-file-if-exists=.env node_modules/.bin/astro dev",
+    "build": "node --env-file-if-exists=.env node_modules/.bin/astro build",
+    "preview": "node --env-file-if-exists=.env node_modules/.bin/astro preview",
     "astro": "astro",
-    "db:check": "node scripts/verify-neon.ts",
-    "db:migrate": "node scripts/migrate.ts"
+    "db:check": "node --env-file-if-exists=.env scripts/verify-neon.ts",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
+    "sanity:seed": "node --env-file-if-exists=.env scripts/seed-sanity.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "node --env-file-if-exists=.env node_modules/.bin/playwright test",
+    "lint": "eslint . && prettier --check .",
+    "lighthouse": "lhci autorun",
+    "format": "prettier --write .",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",
@@ -20,6 +28,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@sanity/astro": "^3.5.0",
     "@sanity/client": "^7.24.0",
+    "@sanity/image-url": "^2.1.1",
     "@sanity/vision": "^5.31.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -33,7 +42,21 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@axe-core/playwright": "^4.12.1",
+    "@eslint/js": "^10.0.1",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^22.20.1",
-    "typescript": "^5.9.3"
+    "audit-ci": "^7.1.0",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^3.0.1",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   }
 }

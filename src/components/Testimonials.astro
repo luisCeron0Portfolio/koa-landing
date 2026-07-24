@@ -1,0 +1,46 @@
+---
+import type { TestimonialContent } from '../lib/domain/content';
+
+interface Props {
+  content: TestimonialContent[];
+}
+
+const { content } = Astro.props;
+---
+
+{
+  content.length > 0 && (
+    <section class="testimonials">
+      {content.map((t) => (
+        <blockquote>
+          <p>“{t.quote}”</p>
+          <footer>
+            {t.authorName}
+            {t.authorRole && <span>, {t.authorRole}</span>}
+          </footer>
+        </blockquote>
+      ))}
+    </section>
+  )
+}
+
+<style>
+  .testimonials {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  blockquote {
+    margin: 0;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    background: rgba(245, 245, 247, 0.06);
+  }
+  blockquote footer {
+    margin-top: 0.5rem;
+    opacity: 0.6;
+    font-size: 0.9rem;
+  }
+</style>

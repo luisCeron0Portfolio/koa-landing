@@ -1,41 +1,107 @@
 ---
+import { sanityClient } from '../lib/adapters/sanity';
+import Hero from '../components/Hero.astro';
+import ProblemSection from '../components/ProblemSection.astro';
+import Specs from '../components/Specs.astro';
+import Gallery from '../components/Gallery.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Faq from '../components/Faq.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import WaitlistForm from '../components/WaitlistForm';
+import SocialProofCounter from '../components/SocialProofCounter.astro';
+import GtmSnippet from '../components/GtmSnippet.astro';
+import type {
+  FaqItemContent,
+  FooterContent,
+  GalleryContent,
+  HeroContent,
+  ProblemContextContent,
+  SpecsSectionContent,
+  TestimonialContent,
+} from '../lib/domain/content';
+
+// Contenido editorial (SRS §9) — se resuelve en build time; una publicación
+// nueva en Sanity Studio requiere un rebuild (Build 3: webhook → Vercel).
+const [hero, problemContext, specs, gallery, testimonials, faqItems, footer] = await Promise.all([
+  sanityClient.fetch<HeroContent | null>('*[_type == "hero"][0]'),
+  sanityClient.fetch<ProblemContextContent | null>('*[_type == "problemContext"][0]'),
+  sanityClient.fetch<SpecsSectionContent | null>('*[_type == "specsSection"][0]{heading, items}'),
+  sanityClient.fetch<GalleryContent | null>('*[_type == "gallery"][0]{images}'),
+  sanityClient.fetch<TestimonialContent[]>('*[_type == "testimonial"]'),
+  sanityClient.fetch<FaqItemContent[]>('*[_type == "faqItem"] | order(order asc)'),
+  sanityClient.fetch<FooterContent | null>('*[_type == "footer"][0]'),
+]);
+
+const utm = {
+  source: Astro.url.searchParams.get('utm_source'),
+  medium: Astro.url.searchParams.get('utm_medium'),
+  campaign: Astro.url.searchParams.get('utm_campaign'),
+};
+
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
 <html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>KOA Buds — Próximamente</title>
-	</head>
-	<body>
-		<main>
-			<h1>KOA Buds</h1>
-			<p>La lista de espera abre pronto.</p>
-		</main>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta
+      name="description"
+      content={problemContext?.body ??
+        'Sumate a la lista de espera de KOA Buds, audífonos true wireless con cancelación de ruido activa.'}
+    />
+    <title>{hero?.productName ?? 'KOA Buds'} — Lista de espera</title>
+  </head>
+  <body>
+    <GtmSnippet />
+
+    <Hero content={hero} />
+    <ProblemSection content={problemContext} />
+    <Specs content={specs} />
+    <Gallery content={gallery} />
+    <Testimonials content={testimonials ?? []} />
+    <Faq content={faqItems ?? []} />
+
+    <section id="waitlist" class="waitlist">
+      <h2>Unite a la lista de espera</h2>
+      <SocialProofCounter />
+      <WaitlistForm client:load turnstileSiteKey={turnstileSiteKey} />
+    </section>
+
+    <SiteFooter content={footer} utm={utm} />
+  </body>
 </html>
 
+<style is:global>
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #0b0b0f;
+    color: #f5f5f7;
+  }
+  /* Honeypot de WaitlistForm — clase en vez de `style` inline (CSP style-src-attr). */
+  .visually-hidden {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>
+
 <style>
-	body {
-		display: grid;
-		place-items: center;
-		min-height: 100svh;
-		margin: 0;
-		font-family: system-ui, sans-serif;
-		background: #0b0b0f;
-		color: #f5f5f7;
-	}
-	main {
-		text-align: center;
-	}
-	h1 {
-		font-size: clamp(2rem, 6vw, 4rem);
-		letter-spacing: -0.02em;
-		margin: 0 0 0.5rem;
-	}
-	p {
-		opacity: 0.7;
-	}
+  .waitlist {
+    max-width: 28rem;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+  .waitlist h2 {
+    margin-bottom: 1.5rem;
+  }
 </style>

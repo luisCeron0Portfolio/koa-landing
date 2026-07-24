@@ -9,7 +9,12 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({ name: 'quote', title: 'Cita', type: 'text', rows: 3, validation: (r) => r.required() }),
-    defineField({ name: 'authorName', title: 'Nombre del autor', type: 'string', validation: (r) => r.required() }),
+    defineField({
+      name: 'authorName',
+      title: 'Nombre del autor',
+      type: 'string',
+      validation: (r) => r.required(),
+    }),
     defineField({ name: 'authorRole', title: 'Rol / contexto del autor', type: 'string' }),
     defineField({
       name: 'isFictional',

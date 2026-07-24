@@ -1,0 +1,47 @@
+---
+import type { FaqItemContent } from '../lib/domain/content';
+
+interface Props {
+  content: FaqItemContent[];
+}
+
+const { content } = Astro.props;
+---
+
+{
+  content.length > 0 && (
+    <section class="faq">
+      <h2>Preguntas frecuentes</h2>
+      {content.map((item) => (
+        <details>
+          <summary>{item.question}</summary>
+          <p>{item.answer}</p>
+        </details>
+      ))}
+    </section>
+  )
+}
+
+<style>
+  .faq {
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  h2 {
+    text-align: center;
+    margin: 0 0 1.5rem;
+  }
+  details {
+    border-bottom: 1px solid rgba(245, 245, 247, 0.15);
+    padding: 0.75rem 0;
+  }
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  details p {
+    margin: 0.5rem 0 0;
+    opacity: 0.75;
+  }
+</style>

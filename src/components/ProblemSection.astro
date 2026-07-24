@@ -1,0 +1,34 @@
+---
+import type { ProblemContextContent } from '../lib/domain/content';
+
+interface Props {
+  content: ProblemContextContent | null;
+}
+
+const { content } = Astro.props;
+---
+
+{
+  content && (
+    <section class="problem">
+      <h2>{content.heading}</h2>
+      <p>{content.body}</p>
+    </section>
+  )
+}
+
+<style>
+  .problem {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 0.75rem;
+  }
+  p {
+    opacity: 0.75;
+  }
+</style>

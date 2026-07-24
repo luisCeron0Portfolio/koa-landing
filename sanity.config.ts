@@ -2,11 +2,11 @@ import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
 import { schemaTypes } from './src/sanity/schemaTypes';
 
-// projectId/dataset reales: [PENDIENTE] — ver tasks/todo.md, bloqueante Build 1.
-// El placeholder deja el Studio scaffoldeado y el build funcionando; no conecta
-// a un proyecto Sanity real hasta que se configuren las variables de entorno.
-const projectId = process.env.PUBLIC_SANITY_PROJECT_ID || 'placeholder';
-const dataset = process.env.PUBLIC_SANITY_DATASET || 'production';
+// Este archivo se bundlea vía Vite para el Studio embebido — acá corresponde
+// `import.meta.env`, no `process.env` (que no existe en el bundle de cliente).
+// projectId/dataset reales: [PENDIENTE] si no hay .env — ver tasks/todo.md.
+const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID || 'placeholder';
+const dataset = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
 
 export default defineConfig({
   name: 'koa-buds-demo',

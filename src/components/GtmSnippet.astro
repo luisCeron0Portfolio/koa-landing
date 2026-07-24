@@ -1,0 +1,45 @@
+---
+// RF-005: cuenta de TEST, nunca mezclada con datos de producción de un
+// cliente real (SRS §8). Sin PUBLIC_GTM_CONTAINER_ID no se renderiza nada —
+// no hay un container de prueba real todavía (ver tasks/todo.md).
+const containerId = import.meta.env.PUBLIC_GTM_CONTAINER_ID;
+---
+
+{
+  containerId && (
+    <>
+      {/* El containerId viaja por un atributo de datos, no interpolado
+          dentro del script: un <script set:html={...}> con una variable
+          dinámica queda "sin procesar" para Astro, que entonces no puede
+          calcularle un hash de CSP — quedaría bloqueado por el navegador
+          (detectado corriendo Lighthouse de verdad, ver tasks/lessons.md).
+          Con el script 100% estático de abajo, Astro sí lo hashea. */}
+      <div id="gtm-config" data-container-id={containerId} hidden />
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${containerId}`}
+          height="0"
+          width="0"
+          style="display:none;visibility:hidden"
+          title="Google Tag Manager"
+        />
+      </noscript>
+    </>
+  )
+}
+
+<script>
+  // Inicializa dataLayer siempre, exista o no un container real todavía —
+  // así los push() de eventos de conversión nunca fallan (RF-005).
+  window.dataLayer = window.dataLayer || [];
+
+  const containerId = document.getElementById('gtm-config')?.dataset.containerId;
+  if (containerId) {
+    window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+    const firstScript = document.getElementsByTagName('script')[0];
+    const gtmScript = document.createElement('script');
+    gtmScript.async = true;
+    gtmScript.src = `https://www.googletagmanager.com/gtm.js?id=${containerId}`;
+    firstScript.parentNode?.insertBefore(gtmScript, firstScript);
+  }
+</script>

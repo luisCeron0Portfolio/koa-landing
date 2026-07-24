@@ -14,7 +14,12 @@ export default defineType({
       description: 'Número de prueba de la agencia. Nunca el número real de un cliente.',
       validation: (r) => r.required(),
     }),
-    defineField({ name: 'whatsappMessage', title: 'Mensaje prellenado', type: 'string', initialValue: 'Hola, quiero más info sobre KOA Buds' }),
+    defineField({
+      name: 'whatsappMessage',
+      title: 'Mensaje prellenado',
+      type: 'string',
+      initialValue: 'Hola, quiero más info sobre KOA Buds',
+    }),
     defineField({
       name: 'socialLinks',
       title: 'Redes sociales (placeholder)',

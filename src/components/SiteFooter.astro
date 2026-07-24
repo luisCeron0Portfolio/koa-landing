@@ -1,0 +1,61 @@
+---
+import { buildWhatsAppUrl, type FooterContent } from '../lib/domain/content';
+
+interface Props {
+  content: FooterContent | null;
+  utm: { source?: string | null; medium?: string | null; campaign?: string | null };
+}
+
+const { content, utm } = Astro.props;
+const whatsappUrl = content?.whatsappNumber
+  ? buildWhatsAppUrl(
+      content.whatsappNumber,
+      content.whatsappMessage ?? 'Hola, quiero más info sobre KOA Buds',
+      utm,
+    )
+  : null;
+---
+
+<footer>
+  {
+    whatsappUrl && (
+      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+        Escribinos por WhatsApp
+      </a>
+    )
+  }
+  {
+    content?.socialLinks && content.socialLinks.length > 0 && (
+      <nav aria-label="Redes sociales">
+        {content.socialLinks.map((link) => (
+          <a href={link.url} target="_blank" rel="noopener noreferrer">
+            {link.platform}
+          </a>
+        ))}
+      </nav>
+    )
+  }
+  <p>KOA Buds — caso de estudio de demo, producto ficticio.</p>
+</footer>
+
+<style>
+  footer {
+    display: grid;
+    gap: 1rem;
+    place-items: center;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    opacity: 0.8;
+  }
+  footer a {
+    color: #f5f5f7;
+  }
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+  footer p {
+    font-size: 0.85rem;
+    opacity: 0.6;
+  }
+</style>
