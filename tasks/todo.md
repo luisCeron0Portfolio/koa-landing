@@ -296,3 +296,25 @@ tanto el email de confirmación como este CTA del formulario.
 - `tsc`/`astro check` 0 errores, lint limpio, 33 unit tests, 7 E2E.
 - Playwright manual: con teléfono lleno, el botón aparece con el link y
   mensaje correctos; sin teléfono, no aparece. Confirmado con screenshot.
+
+## Iteración: de botón manual a redirección automática (2026-07-24, mismo día)
+El usuario pidió reemplazar el botón "Escribinos por WhatsApp" por una
+redirección automática de la misma pestaña al enviar el form (con un
+delay corto asumido), y que el mensaje reflejara el mismo disclaimer de
+demo que el email (KOA Buds es una demo de Elevaforge del producto
+"Landing Page", invita a pedir la propia).
+
+**Implementado:** en `handleSubmit`, si `phone` está lleno y el envío es
+exitoso, se agenda `window.location.href = whatsappUrl` con
+`WHATSAPP_REDIRECT_DELAY_MS = 1500`. Se usa `window.location.href` (navegar
+la MISMA pestaña), no `window.open()`: un popup abierto después de un
+`await` se bloquea, pero navegar la pestaña actual vía `location.href` no
+cae bajo esa restricción, así que sí funciona automáticamente sin
+intervención del usuario. El botón se reemplazó por un aviso de texto
+("Te estamos llevando a WhatsApp…") que se muestra durante ese delay.
+
+**Verificado:** este sandbox no tiene salida de red hacia `wa.me`, así que
+se verificó interceptando la navegación con `page.route()` (Playwright) para
+confirmar que el `window.location.href` se dispara con la URL y el mensaje
+correctos tras el delay, y que con el campo de teléfono vacío no hay
+redirección. `tsc`/`astro check`/lint limpios, 33 unit tests, 7 E2E.

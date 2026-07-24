@@ -29,6 +29,9 @@ const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api
 // desbloquea el botón igual para no dejarlo colgado — el submit guard mostrará
 // un mensaje claro en vez de un 400 crudo.
 const TURNSTILE_READY_FALLBACK_MS = 9000;
+// Delay entre el 200 de éxito y la redirección a WhatsApp: le da tiempo al
+// usuario de leer "¡Estás en la lista!" antes de que la pestaña navegue.
+const WHATSAPP_REDIRECT_DELAY_MS = 1500;
 
 type SubmitState =
   | { status: 'idle' }
@@ -230,6 +233,19 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         window.dataLayer?.push({ event: 'waitlist_signup' });
         teardownTurnstile();
         setState({ status: 'success', emailSent: data.emailSent !== false });
+
+        // Si dejó teléfono, redirigimos (misma pestaña, no window.open — un
+        // popup abierto después de un await se bloquea) a WhatsApp con el
+        // mismo mensaje del email: KOA Buds es una demo de Elevaforge del
+        // producto "Landing Page", e invita a pedir la suya propia. El delay
+        // le da tiempo a leer "¡Estás en la lista!" antes de navegar.
+        if (phone) {
+          const whatsappMessage = `Hola, soy ${name || 'un nuevo suscriptor'}. Vi la demo de KOA Buds — un caso de estudio de Elevaforge para mostrar el producto "Landing Page" — y me interesa tener mi propia landing page.`;
+          const whatsappUrl = buildWhatsAppUrl(ELEVAFORGE_WHATSAPP_NUMBER, whatsappMessage);
+          window.setTimeout(() => {
+            window.location.href = whatsappUrl;
+          }, WHATSAPP_REDIRECT_DELAY_MS);
+        }
         return;
       }
 
@@ -285,19 +301,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
             ? 'Revisá tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.'
             : 'Te sumamos a la lista de espera. Te avisamos apenas abramos el lanzamiento.'}
         </p>
-        {phone && (
-          <a
-            className="btn btn-ghost wl-whatsapp-cta"
-            href={buildWhatsAppUrl(
-              ELEVAFORGE_WHATSAPP_NUMBER,
-              `Hola, soy ${name || 'un nuevo suscriptor'}. Me acabo de unir a la lista de espera de KOA Buds y dejé mi WhatsApp (${phone}) para que me contacten.`,
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Escribinos por WhatsApp
-          </a>
-        )}
+        {phone && <p className="wl-success-redirect">Te estamos llevando a WhatsApp…</p>}
       </div>
     );
   }

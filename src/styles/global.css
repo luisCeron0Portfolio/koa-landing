@@ -425,6 +425,9 @@ img {
   margin: 0;
   max-width: 34ch;
 }
-.wl-whatsapp-cta {
-  margin-top: 0.6rem;
+.wl-success-redirect {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0.2rem 0 0;
 }
