@@ -4,6 +4,11 @@ import { sql } from '../../src/lib/adapters/neon';
 // SRS §12 / §11 Build 2: "usuario real completa RF-001 + RF-002 de punta a
 // punta y queda confirmed."
 //
+// Con un dominio propio verificado en Resend (SPF/DKIM), el envío ya no está
+// limitado al email dueño de la cuenta — este test manda a un destinatario
+// arbitrario, como cualquier visitante real (RESEND_TEST_RECIPIENT_EMAIL, del
+// dominio sandbox, quedó sin uso).
+//
 // Este test cubre hasta donde es alcanzable con las credenciales actuales:
 // envío real vía Resend + insert real en Neon en `pending_confirmation`. NO
 // lee de vuelta el email para extraer el token y completar el click de
@@ -18,23 +23,11 @@ import { sql } from '../../src/lib/adapters/neon';
 const required = ['RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'UPSTASH_REDIS_REST_URL'];
 const missing = required.filter((key) => !process.env[key]);
 
-// El dominio sandbox de Resend solo entrega al email dueño de la cuenta —
-// sin RESEND_TEST_RECIPIENT_EMAIL, un envío a una dirección de prueba
-// (@e2e.test) fallaría con 422 "Invalid `to` field".
-const usesSandboxDomain = process.env.RESEND_FROM_EMAIL === 'onboarding@resend.dev';
-if (usesSandboxDomain && !process.env.RESEND_TEST_RECIPIENT_EMAIL) {
-  missing.push('RESEND_TEST_RECIPIENT_EMAIL (requerido mientras RESEND_FROM_EMAIL sea el dominio sandbox)');
-}
-
 test.describe('RF-001 → RF-002 — envío real de confirmación', () => {
   test.skip(missing.length > 0, `Requiere ${missing.join(', ')} reales — ver tasks/todo.md`);
 
   test('un envío legítimo queda pending_confirmation y Resend acepta el email', async ({ request }) => {
-    // El dominio sandbox de Resend (onboarding@resend.dev) solo entrega al
-    // email dueño de la cuenta — con RESEND_TEST_RECIPIENT_EMAIL seteado
-    // usamos ese; si no, cualquier dirección alcanza para probar que Resend
-    // acepta el envío (lo que ya requiere un dominio propio verificado).
-    const email = process.env.RESEND_TEST_RECIPIENT_EMAIL || `full-flow-e2e-${Date.now()}@e2e.test`;
+    const email = `full-flow-e2e-${Date.now()}@e2e.test`;
 
     try {
       const response = await request.post('/api/waitlist', {
@@ -48,9 +41,7 @@ test.describe('RF-001 → RF-002 — envío real de confirmación', () => {
       });
 
       expect(response.status()).toBe(200);
-      // Con el email dueño de la cuenta de Resend, el envío sí se completa →
-      // emailSent:true. (Para destinatarios arbitrarios sería false hasta
-      // verificar un dominio propio en Resend — ver tasks/todo.md, R-05.)
+      // Dominio propio verificado → Resend acepta cualquier destinatario.
       const body = await response.json();
       expect(body.emailSent).toBe(true);
 

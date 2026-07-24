@@ -87,7 +87,7 @@ Build 1 queda **completo de punta a punta**: proyecto Astro deployado en Vercel 
 ## Bloqueantes conocidos
 - **[RESUELTO 2026-07-24] Resend + Upstash reales conectados.** `RESEND_API_KEY`, `RESEND_FROM_EMAIL=onboarding@resend.dev`, `UPSTASH_REDIS_REST_URL/TOKEN` en `.env` (no commiteados). Verificado con los 7/7 E2E reales.
   - `PUBLIC_TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` siguen usando las claves de prueba **públicas y documentadas por Cloudflare** (siempre pasan) — suficiente para desarrollo/testing; antes de producción hay que reemplazarlas por un sitekey real de la agencia.
-  - **`RESEND_FROM_EMAIL` sigue siendo el dominio sandbox** (`onboarding@resend.dev`), que solo entrega al email dueño de la cuenta de Resend (`RESEND_TEST_RECIPIENT_EMAIL` en `.env`). Antes de producción real: verificar un dominio propio con SPF/DKIM (`[PENDIENTE]` ya anotado en Build 1/§8) para poder mandar a cualquier destinatario.
+  - **[RESUELTO 2026-07-24]** `RESEND_FROM_EMAIL` pasó de `onboarding@resend.dev` (sandbox, solo entregaba al dueño de la cuenta) a `hola@koa.elevaforge.com`, dominio propio verificado (SPF/DKIM) en Resend. Confirmado con una llamada directa a la API de Resend (200, antes 422) y con el test E2E full-flow mandando a un destinatario arbitrario (`emailSent:true`). `RESEND_TEST_RECIPIENT_EMAIL` quedó sin uso — se sacó de `.env.example` y del workflow de CI.
   - **La API key de Resend es "sending access" únicamente** — `emails.list()`/`emails.get()` devuelven `401 restricted_api_key`. Esto significa que el test E2E de flujo completo verifica envío real + insert real, pero **no** lee de vuelta el email para clickear el link de confirmación real (la mecánica de `/confirmar` en sí ya está cubierta aparte, con fixtures, en `confirmar.spec.ts`). Si se quiere automatizar el click real: generar una API key de Resend con permiso "Full access".
   - Bug real encontrado en el camino: el `TURNSTILE_SECRET_KEY` de prueba que yo mismo había puesto en `.env` durante Build 2 tenía 3 ceros de menos (`1x0000000000000000000000000000AA` en vez de `1x0000000000000000000000000000000AA`) — Cloudflare respondía `invalid-input-secret`. Corregido y verificado con una llamada directa a `siteverify`. Ver `tasks/lessons.md`.
 
@@ -149,7 +149,16 @@ Build 2 queda **completo y verificado de punta a punta contra los 4 servicios re
 Configurado por el usuario en los dashboards de Vercel/Sanity (Deploy Hook + webhook). No verificado por mí end-to-end (no tengo acceso a esos dashboards), pero queda fuera de bloqueantes.
 
 ## Dominio real de la agencia — resuelto, ya no bloquea Build 4
-Decisión: no es un requisito técnico de ningún RF (GA4/Meta Pixel y WhatsApp no dependen del dominio de hosting). Se adopta `demo-landing-delta.vercel.app` como definitivo. SRS actualizado a v0.2 (`docs/SRS-landing-page-koa-buds-completo.md` §8, §11, §13, §17) — ver el documento para el razonamiento completo. El dominio de **Resend** (SPF/DKIM, distinto del de hosting) sigue pendiente — R-05 del SRS.
+Decisión: no es un requisito técnico de ningún RF (GA4/Meta Pixel y WhatsApp no dependen del dominio de hosting). Se adopta `demo-landing-delta.vercel.app` como definitivo. SRS actualizado a v0.2 (`docs/SRS-landing-page-koa-buds-completo.md` §8, §11, §13, §17) — ver el documento para el razonamiento completo.
+
+## R-05 del SRS — RESUELTO 2026-07-24
+El dominio de **Resend** (distinto del de hosting) se verificó: subdominio `koa.elevaforge.com` (del dominio propio del usuario, `elevaforge.com`), con registros MX + SPF + DKIM agregados en su proveedor de DNS. `RESEND_FROM_EMAIL=hola@koa.elevaforge.com`.
+
+Verificado en dos niveles:
+1. Llamada directa a `api.resend.com/emails` con un destinatario arbitrario → `200` (antes, con el dominio sandbox, `422 "you can only send to your own email"`).
+2. Test E2E `waitlist-full-flow.spec.ts` actualizado para mandar a un email `@e2e.test` cualquiera (ya no necesita `RESEND_TEST_RECIPIENT_EMAIL`) → `emailSent:true`.
+
+RF-002 (double opt-in) ahora entrega de verdad a cualquier visitante, no solo al dueño de la cuenta de Resend. **Pendiente:** actualizar `RESEND_FROM_EMAIL` también en las variables de entorno de Vercel (Settings → Environment Variables) y redeployar — sin eso, producción sigue en el dominio sandbox aunque local/CI ya usen el nuevo.
 
 ## Estado real vs. lo que dice el código
 **Nada de lo construido en esta sesión ni en la anterior está desplegado todavía.** `demo-landing-delta.vercel.app` sigue sirviendo el placeholder de Build 1 hasta el próximo push — el formulario, `/confirmar`, el contador, GTM, el contenido real de Sanity y el CSP corregido existen en este working tree, a punto de commitearse. `npm audit`/CodeQL/gitleaks/Lighthouse en GitHub Actions están **configurados pero nunca corrieron de verdad en GitHub** (solo validé los comandos equivalentes en local) — para que corran los jobs opcionales (E2E, Lighthouse) hace falta configurar en el repo de GitHub: `vars.CLOUD_CI_ENABLED=true` + todos los secrets (`DATABASE_URL`, `PUBLIC_SANITY_PROJECT_ID/DATASET`, `IP_HASH_PEPPER`, `TURNSTILE_*`, `RESEND_*`, `UPSTASH_*`) — si no, se saltan solos, no fallan en rojo.
