@@ -29,10 +29,10 @@ function optionalTrimmedString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-export async function POST({ request, clientAddress }: APIContext): Promise<Response> {
+export async function POST(context: APIContext): Promise<Response> {
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await context.request.json();
   } catch {
     return json({ error: 'invalid_json' }, 400);
   }
@@ -43,6 +43,21 @@ export async function POST({ request, clientAddress }: APIContext): Promise<Resp
     return json({ ok: true }, 200);
   }
 
+  // Un fallo de I/O (Neon/Upstash/Turnstile/env var) nunca debe crashear con un
+  // 500 opaco: se loguea server-side (sin payload ni token, CLAUDE.md) y se
+  // devuelve JSON limpio, diagnosticable en los logs de Vercel.
+  try {
+    return await handleWaitlist(context, body);
+  } catch (err) {
+    console.error('[waitlist] error inesperado:', err instanceof Error ? err.message : err);
+    return json({ error: 'server_error' }, 500);
+  }
+}
+
+async function handleWaitlist(
+  { request, clientAddress }: APIContext,
+  body: Record<string, unknown>,
+): Promise<Response> {
   const ipHashPepper = process.env.IP_HASH_PEPPER;
   if (!ipHashPepper) {
     throw new Error('IP_HASH_PEPPER no está configurada.');
@@ -126,8 +141,23 @@ export async function POST({ request, clientAddress }: APIContext): Promise<Resp
     INSERT INTO lead_ip_hashes (lead_id, ip_hash) VALUES (${leadId}, ${ipHash})
   `;
 
+  // El lead ya está capturado en Neon (`pending_confirmation`). El envío del
+  // email de confirmación es best-effort: si el proveedor falla (outage, o el
+  // dominio sandbox de Resend rechazando un destinatario que no es el dueño de
+  // la cuenta), NO se pierde el lead ni se devuelve un 500 al usuario — se
+  // loguea el fallo server-side (sin token ni payload) y se responde 200.
+  // Requisito para producción real: verificar un dominio propio en Resend con
+  // SPF/DKIM (ver tasks/todo.md, R-05 del SRS) para poder entregar a cualquier
+  // destinatario.
   const confirmUrl = new URL(`/confirmar?token=${token}`, request.url).toString();
-  await sendConfirmationEmail({ to: lead.email, confirmUrl });
+  try {
+    await sendConfirmationEmail({ to: lead.email, confirmUrl });
+  } catch (err) {
+    console.error(
+      '[waitlist] envío de confirmación falló (lead capturado igual):',
+      err instanceof Error ? err.message : err,
+    );
+  }
 
   return json({ ok: true }, 200);
 }

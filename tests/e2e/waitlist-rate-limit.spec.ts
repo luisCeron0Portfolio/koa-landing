@@ -14,6 +14,12 @@ test.describe('RF-001 — rate limit (FA-03)', () => {
   test('el 6to intento en 10 minutos desde la misma IP responde 429 con retry_after', async ({ request }) => {
     let last: { status: number; retryAfter: unknown } | undefined;
 
+    // Sin `turnstileToken`: el rate limit se cuenta ANTES que Turnstile en
+    // /api/waitlist, así que cada request incrementa el contador pero luego
+    // falla en Turnstile (400) sin llegar al insert — el test ejercita el
+    // rate limit sin ensuciar la DB con leads de prueba. (Con el secret de
+    // prueba de Cloudflare, un token cualquiera "pasa", así que hay que
+    // omitirlo para no insertar.)
     for (let attempt = 1; attempt <= 6; attempt++) {
       const response = await request.post('/api/waitlist', {
         data: {
@@ -21,7 +27,6 @@ test.describe('RF-001 — rate limit (FA-03)', () => {
           email: `rate-limit-e2e-${attempt}-${Date.now()}@example.com`,
           consent: true,
           honeypot: '',
-          turnstileToken: 'invalid-on-purpose',
         },
       });
       const body = await response.json().catch(() => ({}));
