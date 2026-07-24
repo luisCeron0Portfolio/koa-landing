@@ -3,13 +3,19 @@ import { useEffect, useId, useRef, useState } from 'react';
 // RF-001: formulario de captación. Client-side es solo UX — toda la
 // revalidación real ocurre en /api/waitlist (CLAUDE.md — Seguridad).
 
+interface TurnstileRenderOptions {
+  sitekey: string;
+  callback: (token: string) => void;
+  'expired-callback'?: () => void;
+  'error-callback'?: () => void;
+}
+
 declare global {
   interface Window {
     turnstile?: {
-      render: (
-        container: HTMLElement,
-        options: { sitekey: string; callback: (token: string) => void },
-      ) => string;
+      render: (container: HTMLElement, options: TurnstileRenderOptions) => string;
+      remove?: (widgetId: string) => void;
+      reset?: (widgetId?: string) => void;
     };
     // RF-005: inicializado siempre en GtmSnippet.astro, exista o no un
     // container real de GTM todavía.
@@ -18,6 +24,10 @@ declare global {
 }
 
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+// Si el widget no entrega token en este plazo (widget roto, red caída), se
+// desbloquea el botón igual para no dejarlo colgado — el submit guard mostrará
+// un mensaje claro en vez de un 400 crudo.
+const TURNSTILE_READY_FALLBACK_MS = 9000;
 
 type SubmitState =
   | { status: 'idle' }
@@ -30,41 +40,69 @@ interface FieldErrors {
   [field: string]: string;
 }
 
+// Encapsula el ciclo de vida del widget de Turnstile: carga el script, hace un
+// único render (guardado por widgetId), resetea el token si expira/falla, y
+// limpia el widget al desmontar. `ready` es true cuando: no hay Turnstile
+// configurado, o ya hay token, o venció el fallback (widget que nunca cargó).
 function useTurnstile(siteKey: string | undefined) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
   const [token, setToken] = useState<string>('');
+  const [fallbackReady, setFallbackReady] = useState(false);
 
   useEffect(() => {
-    if (!siteKey || !containerRef.current) return;
+    if (!siteKey) {
+      setFallbackReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    const fallback = window.setTimeout(() => {
+      if (!cancelled) setFallbackReady(true);
+    }, TURNSTILE_READY_FALLBACK_MS);
 
     function render() {
-      if (window.turnstile && containerRef.current) {
-        window.turnstile.render(containerRef.current, {
-          sitekey: siteKey as string,
-          callback: setToken,
-        });
-      }
+      if (!window.turnstile || !containerRef.current || widgetIdRef.current) return;
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey as string,
+        callback: (t: string) => setToken(t),
+        'expired-callback': () => setToken(''),
+        'error-callback': () => setToken(''),
+      });
     }
 
     if (window.turnstile) {
       render();
-      return;
+    } else {
+      const existing = document.querySelector(`script[src="${TURNSTILE_SCRIPT_SRC}"]`);
+      if (existing) {
+        existing.addEventListener('load', render, { once: true });
+      } else {
+        const script = document.createElement('script');
+        script.src = TURNSTILE_SCRIPT_SRC;
+        script.async = true;
+        script.addEventListener('load', render, { once: true });
+        document.head.appendChild(script);
+      }
     }
 
-    const existing = document.querySelector(`script[src="${TURNSTILE_SCRIPT_SRC}"]`);
-    if (existing) {
-      existing.addEventListener('load', render, { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = TURNSTILE_SCRIPT_SRC;
-    script.async = true;
-    script.addEventListener('load', render, { once: true });
-    document.head.appendChild(script);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallback);
+      if (widgetIdRef.current && window.turnstile?.remove) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch {
+          // el widget ya no existe — nada que limpiar
+        }
+        widgetIdRef.current = null;
+      }
+    };
   }, [siteKey]);
 
-  return { containerRef, token };
+  const required = Boolean(siteKey);
+  const ready = !required || token !== '' || fallbackReady;
+  return { containerRef, token, ready, required };
 }
 
 function getUtmParams(): { utmSource: string | null; utmMedium: string | null; utmCampaign: string | null } {
@@ -84,11 +122,29 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
   const [consent, setConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [state, setState] = useState<SubmitState>({ status: 'idle' });
-  const { containerRef: turnstileRef, token: turnstileToken } = useTurnstile(turnstileSiteKey);
+  const {
+    containerRef: turnstileRef,
+    token: turnstileToken,
+    ready: turnstileReady,
+    required: turnstileRequired,
+  } = useTurnstile(turnstileSiteKey);
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setFieldErrors({});
+
+    // Turnstile requerido pero sin token: no mandamos el request (evita el 400
+    // `turnstile_failed` y no gasta cupo de rate limit). El botón ya está
+    // deshabilitado hasta `turnstileReady`; esto cubre el caso en que el
+    // widget nunca entregó token y se desbloqueó por el fallback.
+    if (turnstileRequired && !turnstileToken) {
+      setState({
+        status: 'error',
+        message: 'No pudimos verificar que no seas un bot. Recargá la página e intentá de nuevo.',
+      });
+      return;
+    }
+
     setState({ status: 'submitting' });
 
     const honeypot = (new FormData(event.currentTarget).get('company_website') as string) ?? '';
@@ -281,8 +337,16 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         </p>
       )}
 
-      <button className="btn btn-primary wl-submit" type="submit" disabled={state.status === 'submitting'}>
-        {state.status === 'submitting' ? 'Enviando…' : 'Unirme a la lista de espera'}
+      <button
+        className="btn btn-primary wl-submit"
+        type="submit"
+        disabled={state.status === 'submitting' || !turnstileReady}
+      >
+        {state.status === 'submitting'
+          ? 'Enviando…'
+          : !turnstileReady
+            ? 'Verificando…'
+            : 'Unirme a la lista de espera'}
       </button>
 
       <p className="wl-fineprint">Sin spam. Podés darte de baja cuando quieras.</p>
