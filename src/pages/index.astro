@@ -61,8 +61,13 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     <meta property="og:type" content="website" />
     <meta property="og:title" content={`${productName} — Lista de espera`} />
     <meta property="og:description" content={description} />
-    <link rel="preload" href="/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    {
+      /* Sin <link rel="preload"> para las fuentes: @font-face + el
+      <link rel="stylesheet"> (arriba en el head) ya las descubre rápido —
+      preload acá solo agregaba el warning de Chrome "preloaded but not used
+      within a few seconds" (falso positivo conocido con font-display:swap),
+      sin beneficio medible en Lighthouse (ver tasks/lessons.md). */
+    }
     <title>{productName} — Audífonos true wireless · Lista de espera</title>
   </head>
   <body>

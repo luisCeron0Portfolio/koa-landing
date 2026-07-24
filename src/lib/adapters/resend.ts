@@ -1,7 +1,18 @@
 import { Resend } from 'resend';
+import { buildWhatsAppUrl } from '../domain/content';
 
 // Bounded context: solo email transaccional. Nunca importar Neon ni Sanity
 // desde este módulo (CLAUDE.md — Patrones de arquitectura obligatorios).
+
+// KOA Buds es un caso de estudio ficticio de Elevaforge (CLAUDE.md — contexto
+// del proyecto). El email de confirmación aclara esto y, ya que la persona
+// mostró interés en una landing page, invita a contactar a la agencia por el
+// producto real: "Landing Page". Número y mensaje confirmados por el usuario
+// (no inventados) — no es el mismo WhatsApp de RF-003 (ese es "de prueba",
+// para consultas sobre KOA Buds; este es el contacto real de la agencia).
+const ELEVAFORGE_URL = 'https://elevaforge.com';
+const ELEVAFORGE_WHATSAPP_NUMBER = '+573150812166';
+const ELEVAFORGE_WHATSAPP_MESSAGE = 'Hola, quiero adquirir el producto Landing Page de Elevaforge';
 
 function getClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
@@ -17,14 +28,50 @@ export async function sendConfirmationEmail(params: { to: string; confirmUrl: st
     throw new Error('RESEND_FROM_EMAIL no está configurada.');
   }
 
+  const whatsappUrl = buildWhatsAppUrl(ELEVAFORGE_WHATSAPP_NUMBER, ELEVAFORGE_WHATSAPP_MESSAGE);
+
   const { error } = await getClient().emails.send({
     from,
     to: params.to,
     subject: 'Confirmá tu lugar en la lista de espera de KOA Buds',
-    html:
-      '<p>Gracias por sumarte a la lista de espera de KOA Buds.</p>' +
-      `<p><a href="${params.confirmUrl}">Confirmá tu email acá</a></p>` +
-      '<p>Este link expira en 24 horas. Si no fuiste vos, ignorá este mensaje.</p>',
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;color:#1a1a1a">
+        <p>Gracias por sumarte a la lista de espera de KOA Buds.</p>
+        <p style="margin:24px 0">
+          <a href="${params.confirmUrl}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;border-radius:999px;text-decoration:none;font-weight:600">
+            Confirmar mi email
+          </a>
+        </p>
+        <p style="color:#555;font-size:14px">Este link expira en 24 horas. Si no fuiste vos, ignorá este mensaje.</p>
+
+        <hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0" />
+
+        <p style="color:#555;font-size:13px;line-height:1.6">
+          <strong>Nota:</strong> KOA Buds es un producto ficticio — este sitio es un caso de estudio de
+          demostración creado por <strong>Elevaforge</strong> para mostrar cómo construimos landing pages
+          de captación como esta.
+        </p>
+        <p style="color:#555;font-size:13px;line-height:1.6">
+          ¿Querés una landing page así para tu propio producto? Escribinos:
+        </p>
+        <p style="margin:16px 0">
+          <a href="${ELEVAFORGE_URL}" style="color:#111;font-weight:600">${ELEVAFORGE_URL.replace('https://', '')}</a>
+          &nbsp;·&nbsp;
+          <a href="${whatsappUrl}" style="color:#111;font-weight:600">WhatsApp</a>
+        </p>
+      </div>
+    `,
+    text: [
+      'Gracias por sumarte a la lista de espera de KOA Buds.',
+      '',
+      `Confirmá tu email acá: ${params.confirmUrl}`,
+      '(Este link expira en 24 horas. Si no fuiste vos, ignorá este mensaje.)',
+      '',
+      'Nota: KOA Buds es un producto ficticio — este sitio es un caso de estudio de demostración',
+      'creado por Elevaforge para mostrar cómo construimos landing pages de captación como esta.',
+      '',
+      `¿Querés una landing page así para tu propio producto? ${ELEVAFORGE_URL} — WhatsApp: ${whatsappUrl}`,
+    ].join('\n'),
   });
 
   if (error) {

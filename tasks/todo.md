@@ -217,3 +217,44 @@ No se tocó ningún endpoint, schema de Sanity, ni la CSP. El contenido sigue
 viniendo de Sanity (texto editable); las imágenes de producto son assets
 locales art-directed (el campo `productImage`/`gallery` de Sanity sigue
 soportado y es aditivo).
+
+# Post-deploy: fixes de producción + copy del email (2026-07-24)
+
+## Bugs de producción reportados y corregidos
+- **500 en `/api/waitlist`**: envío de email pasó a ser best-effort
+  (try/catch + `emailSent` en la response) — el lead nunca se pierde por un
+  fallo de Resend. Ver `tasks/lessons.md`.
+- **400 + "Cannot find Widget"**: `useTurnstile` reescrito con gate de
+  "listo" antes de habilitar el submit, `expired-callback`/`error-callback`,
+  cleanup del widget. Ver `tasks/lessons.md`.
+- **Emails no llegaban**: causa raíz era el dominio sandbox de Resend
+  (`onboarding@resend.dev`, solo entrega al dueño de la cuenta). Resuelto
+  verificando `koa.elevaforge.com` en Resend (SPF/DKIM/MX) — ver sección
+  "R-05 del SRS" arriba. Un reporte posterior de no-entrega se resolvió solo
+  (warm-up del dominio); confirmado por el usuario vía el log de Resend.
+- **Warning de preload de fuentes**: falso positivo de Chrome con
+  `font-display: swap` — se quitaron los `<link rel="preload">` de
+  `index.astro` (ya no aportaban nada medible en Lighthouse).
+
+## Copy del email de confirmación — actualizado
+`src/lib/adapters/resend.ts` ahora aclara que KOA Buds es un caso de estudio
+ficticio de **Elevaforge** e invita a contactar a la agencia por el producto
+real "Landing Page", con link a `elevaforge.com` y WhatsApp a
+`+573150812166` (construido con `buildWhatsAppUrl`, ya probado en
+`tests/unit/content.test.ts`). Destinos de las CTA confirmados explícitamente
+por el usuario, no inventados. Se agregó fallback `text` plano (el campo
+existe en el SDK de Resend). Firma de `sendConfirmationEmail({ to,
+confirmUrl })` sin cambios — no rompe el contrato usado por
+`src/pages/api/waitlist.ts`.
+
+## Verificado
+- `tsc` + `astro check` 0 errores · `npm run lint` limpio.
+- Unit tests 33/33.
+- E2E 7/7, incluido `waitlist-full-flow` (envío real vía Resend con el
+  nuevo copy — Resend lo aceptó).
+- `.env` confirmado gitignored y no staged antes del commit.
+
+## Pendiente (no bloqueante, fuera de mi alcance)
+- El usuario debe confirmar que `RESEND_FROM_EMAIL` esté en
+  `hola@koa.elevaforge.com` en las Environment Variables de Vercel (no tengo
+  acceso al dashboard).
