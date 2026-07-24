@@ -44,9 +44,18 @@ interface FieldErrors {
 // único render (guardado por widgetId), resetea el token si expira/falla, y
 // limpia el widget al desmontar. `ready` es true cuando: no hay Turnstile
 // configurado, o ya hay token, o venció el fallback (widget que nunca cargó).
+//
+// Un token de Turnstile es de un solo uso: una vez que el server lo valida
+// (éxito o fracaso), reintentar con el mismo token vuelve a fallar con 400
+// `turnstile_failed` aunque el usuario no hizo nada mal (ej: corrigió un
+// campo tras un 400 de validación y reenvió sin que el widget emitiera un
+// token nuevo). Por eso `resetForRetry` se llama después de CUALQUIER
+// intento de submit (falle o no) para forzar un token fresco antes del
+// próximo click.
 function useTurnstile(siteKey: string | undefined) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const fallbackTimerRef = useRef<number | undefined>(undefined);
   const [token, setToken] = useState<string>('');
   const [fallbackReady, setFallbackReady] = useState(false);
 
@@ -57,7 +66,7 @@ function useTurnstile(siteKey: string | undefined) {
     }
 
     let cancelled = false;
-    const fallback = window.setTimeout(() => {
+    fallbackTimerRef.current = window.setTimeout(() => {
       if (!cancelled) setFallbackReady(true);
     }, TURNSTILE_READY_FALLBACK_MS);
 
@@ -86,9 +95,19 @@ function useTurnstile(siteKey: string | undefined) {
       }
     }
 
+    // Al volver por bfcache (botón "atrás"/"adelante" del navegador), el JS
+    // se reanuda con el widget y el token exactamente como estaban al salir
+    // — pero el challenge ya pudo expirar del lado de Cloudflare mientras la
+    // pestaña estaba en el historial. Forzamos un token nuevo al volver.
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) resetForRetry();
+    }
+    window.addEventListener('pageshow', onPageShow);
+
     return () => {
       cancelled = true;
-      window.clearTimeout(fallback);
+      window.removeEventListener('pageshow', onPageShow);
+      window.clearTimeout(fallbackTimerRef.current);
       if (widgetIdRef.current && window.turnstile?.remove) {
         try {
           window.turnstile.remove(widgetIdRef.current);
@@ -100,9 +119,40 @@ function useTurnstile(siteKey: string | undefined) {
     };
   }, [siteKey]);
 
+  function resetForRetry() {
+    setToken('');
+    setFallbackReady(false);
+    window.clearTimeout(fallbackTimerRef.current);
+    fallbackTimerRef.current = window.setTimeout(() => setFallbackReady(true), TURNSTILE_READY_FALLBACK_MS);
+    if (widgetIdRef.current && window.turnstile?.reset) {
+      try {
+        window.turnstile.reset(widgetIdRef.current);
+      } catch {
+        // el widget ya no existe — nada que resetear
+      }
+    }
+  }
+
+  // El formulario se reemplaza por el estado de éxito sin desmontar el
+  // componente (mismo WaitlistForm, distinto JSX) — el cleanup del effect de
+  // arriba nunca corre solo. Sin este teardown explícito, Turnstile deja un
+  // timer interno de auto-refresh apuntando a un widget cuyo contenedor ya no
+  // está en el DOM → warning "Cannot find Widget" en consola.
+  function teardown() {
+    window.clearTimeout(fallbackTimerRef.current);
+    if (widgetIdRef.current && window.turnstile?.remove) {
+      try {
+        window.turnstile.remove(widgetIdRef.current);
+      } catch {
+        // el widget ya no existe — nada que limpiar
+      }
+      widgetIdRef.current = null;
+    }
+  }
+
   const required = Boolean(siteKey);
   const ready = !required || token !== '' || fallbackReady;
-  return { containerRef, token, ready, required };
+  return { containerRef, token, ready, required, resetForRetry, teardown };
 }
 
 function getUtmParams(): { utmSource: string | null; utmMedium: string | null; utmCampaign: string | null } {
@@ -127,6 +177,8 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
     token: turnstileToken,
     ready: turnstileReady,
     required: turnstileRequired,
+    resetForRetry: resetTurnstile,
+    teardown: teardownTurnstile,
   } = useTurnstile(turnstileSiteKey);
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -175,9 +227,16 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         // para mapearlo. `dataLayer` siempre existe (GtmSnippet.astro lo
         // inicializa), así que este push nunca falla aunque no haya GTM.
         window.dataLayer?.push({ event: 'waitlist_signup' });
+        teardownTurnstile();
         setState({ status: 'success', emailSent: data.emailSent !== false });
         return;
       }
+
+      // Un token de Turnstile es de un solo uso: cualquier reintento (retry
+      // por rate limit, corrección de un campo tras un 400 de validación,
+      // etc.) necesita un token fresco o el server lo vuelve a rechazar con
+      // `turnstile_failed` aunque el usuario ya corrigió lo que estaba mal.
+      resetTurnstile();
 
       if (response.status === 429) {
         setState({ status: 'rate_limited', retryAfter: data.retry_after ?? 600 });
@@ -199,6 +258,7 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         message: 'No pudimos procesar tu solicitud. Intentá de nuevo en un momento.',
       });
     } catch {
+      resetTurnstile();
       setState({ status: 'error', message: 'Falló la conexión. Revisá tu internet e intentá de nuevo.' });
     }
   }
