@@ -104,9 +104,10 @@ async function handleWaitlist(
   const existing = existingRows[0] ?? null;
   const action = decideOnExistingLead(existing ? { status: existing.status } : null);
 
-  // FA-04: ya confirmado → 200 idempotente, sin duplicar ni reenviar.
+  // FA-04: ya confirmado → 200 idempotente, sin duplicar ni reenviar. Ya está
+  // adentro, así que emailSent:true (no hace falta reenviar nada).
   if (action === 'idempotent_confirmed') {
-    return json({ ok: true }, 200);
+    return json({ ok: true, emailSent: true }, 200);
   }
 
   const { token, tokenHash } = generateConfirmationToken();
@@ -150,8 +151,10 @@ async function handleWaitlist(
   // SPF/DKIM (ver tasks/todo.md, R-05 del SRS) para poder entregar a cualquier
   // destinatario.
   const confirmUrl = new URL(`/confirmar?token=${token}`, request.url).toString();
+  let emailSent = false;
   try {
     await sendConfirmationEmail({ to: lead.email, confirmUrl });
+    emailSent = true;
   } catch (err) {
     console.error(
       '[waitlist] envío de confirmación falló (lead capturado igual):',
@@ -159,5 +162,8 @@ async function handleWaitlist(
     );
   }
 
-  return json({ ok: true }, 200);
+  // `emailSent` deja que el cliente adapte el mensaje: si el email no salió
+  // (dominio sandbox de Resend rechazando un destinatario que no es el dueño
+  // de la cuenta), no le prometemos al usuario un correo que no va a llegar.
+  return json({ ok: true, emailSent }, 200);
 }

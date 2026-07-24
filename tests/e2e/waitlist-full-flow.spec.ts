@@ -48,6 +48,11 @@ test.describe('RF-001 → RF-002 — envío real de confirmación', () => {
       });
 
       expect(response.status()).toBe(200);
+      // Con el email dueño de la cuenta de Resend, el envío sí se completa →
+      // emailSent:true. (Para destinatarios arbitrarios sería false hasta
+      // verificar un dominio propio en Resend — ver tasks/todo.md, R-05.)
+      const body = await response.json();
+      expect(body.emailSent).toBe(true);
 
       const rows = (await sql`SELECT status FROM leads WHERE email = ${email}`) as { status: string }[];
       expect(rows[0]?.status).toBe('pending_confirmation');

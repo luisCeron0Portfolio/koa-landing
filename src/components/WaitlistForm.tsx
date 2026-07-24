@@ -32,7 +32,7 @@ const TURNSTILE_READY_FALLBACK_MS = 9000;
 type SubmitState =
   | { status: 'idle' }
   | { status: 'submitting' }
-  | { status: 'success' }
+  | { status: 'success'; emailSent: boolean }
   | { status: 'rate_limited'; retryAfter: number }
   | { status: 'error'; message: string };
 
@@ -167,17 +167,17 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (response.ok) {
         // RF-005: evento de conversión — visible en GA4 DebugView / Meta
         // Pixel Helper una vez que haya un container de GTM real configurado
         // para mapearlo. `dataLayer` siempre existe (GtmSnippet.astro lo
         // inicializa), así que este push nunca falla aunque no haya GTM.
         window.dataLayer?.push({ event: 'waitlist_signup' });
-        setState({ status: 'success' });
+        setState({ status: 'success', emailSent: data.emailSent !== false });
         return;
       }
-
-      const data = await response.json().catch(() => ({}));
 
       if (response.status === 429) {
         setState({ status: 'rate_limited', retryAfter: data.retry_after ?? 600 });
@@ -220,7 +220,9 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
         </span>
         <p className="wl-success-title">¡Estás en la lista!</p>
         <p className="wl-success-text">
-          Revisá tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.
+          {state.emailSent
+            ? 'Revisá tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.'
+            : 'Te sumamos a la lista de espera. Te avisamos apenas abramos el lanzamiento.'}
         </p>
       </div>
     );
