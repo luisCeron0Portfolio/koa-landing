@@ -258,3 +258,41 @@ confirmUrl })` sin cambios — no rompe el contrato usado por
 - El usuario debe confirmar que `RESEND_FROM_EMAIL` esté en
   `hola@koa.elevaforge.com` en las Environment Variables de Vercel (no tengo
   acceso al dashboard).
+
+# CTA de WhatsApp tras el signup (2026-07-24)
+
+## Reporte del usuario
+El campo "Teléfono (opcional, para WhatsApp)" del formulario no hacía nada
+con el valor ingresado. Pedido: si es posible, que el sistema le mande un
+mensaje de WhatsApp al usuario; si no, que al enviar el form (con teléfono
+lleno) se redirija al usuario a WhatsApp con mensaje prefabricado hacia
+`+573150812166`.
+
+## Decisión: no automatizar el envío saliente
+Enviar un WhatsApp automático DESDE la agencia HACIA el lead requiere la
+WhatsApp Business API (Meta Cloud API o un proveedor como Twilio): cuenta de
+negocio verificada, plantillas de mensaje pre-aprobadas por Meta para poder
+escribir primero, y costo por conversación. No es "agregar una dependencia",
+es una integración de negocio nueva que no puedo aprovisionar sin que el
+usuario cree esa cuenta — CLAUDE.md exige justificar y no asumir accesos que
+no existen. Se implementó el fallback que el usuario mismo propuso.
+
+## Implementado
+Cuando el envío es exitoso y el usuario completó el campo de teléfono,
+la pantalla de éxito de `WaitlistForm.tsx` muestra un botón "Escribinos por
+WhatsApp" que abre `wa.me/573150812166` (en pestaña nueva) con un mensaje
+prellenado que incluye el nombre y el teléfono dejados. Es un link real, no
+un `window.open()` automático: los navegadores bloquean popups abiertos
+después de un `await` (la llamada al fetch de submit rompe el "user gesture"
+original), así que el link explícito es la forma confiable de hacerlo — y
+además es más honesto con el usuario que un tab-jack sin aviso.
+
+El número `+573150812166` y `https://elevaforge.com` se centralizaron como
+`ELEVAFORGE_WHATSAPP_NUMBER`/`ELEVAFORGE_URL` en `src/lib/domain/content.ts`
+(antes duplicados como constantes locales en `resend.ts`) — ahora los usan
+tanto el email de confirmación como este CTA del formulario.
+
+## Verificado
+- `tsc`/`astro check` 0 errores, lint limpio, 33 unit tests, 7 E2E.
+- Playwright manual: con teléfono lleno, el botón aparece con el link y
+  mensaje correctos; sin teléfono, no aparece. Confirmado con screenshot.

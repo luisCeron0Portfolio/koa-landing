@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { buildWhatsAppUrl } from '../domain/content';
+import { buildWhatsAppUrl, ELEVAFORGE_URL, ELEVAFORGE_WHATSAPP_NUMBER } from '../domain/content';
 
 // Bounded context: solo email transaccional. Nunca importar Neon ni Sanity
 // desde este módulo (CLAUDE.md — Patrones de arquitectura obligatorios).
@@ -7,11 +7,7 @@ import { buildWhatsAppUrl } from '../domain/content';
 // KOA Buds es un caso de estudio ficticio de Elevaforge (CLAUDE.md — contexto
 // del proyecto). El email de confirmación aclara esto y, ya que la persona
 // mostró interés en una landing page, invita a contactar a la agencia por el
-// producto real: "Landing Page". Número y mensaje confirmados por el usuario
-// (no inventados) — no es el mismo WhatsApp de RF-003 (ese es "de prueba",
-// para consultas sobre KOA Buds; este es el contacto real de la agencia).
-const ELEVAFORGE_URL = 'https://elevaforge.com';
-const ELEVAFORGE_WHATSAPP_NUMBER = '+573150812166';
+// producto real: "Landing Page".
 const ELEVAFORGE_WHATSAPP_MESSAGE = 'Hola, quiero adquirir el producto Landing Page de Elevaforge';
 
 function getClient(): Resend {

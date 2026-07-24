@@ -52,6 +52,15 @@ export interface FooterContent {
   socialLinks?: { platform: string; url: string }[];
 }
 
+// Contacto real de Elevaforge (la agencia detrás de este caso de estudio
+// ficticio) — distinto del `whatsappNumber` de FooterContent, que viene de
+// Sanity y es "de prueba" para consultas sobre KOA Buds (RF-003). Número y
+// dominio confirmados explícitamente por el dueño del proyecto, no
+// inventados. Centralizado acá porque lo usan tanto el email de confirmación
+// (server) como el CTA de WhatsApp del formulario (cliente).
+export const ELEVAFORGE_URL = 'https://elevaforge.com';
+export const ELEVAFORGE_WHATSAPP_NUMBER = '+573150812166';
+
 // RF-003: mensaje prellenado con UTMs de la sesión propagados si están
 // disponibles.
 export function buildWhatsAppUrl(

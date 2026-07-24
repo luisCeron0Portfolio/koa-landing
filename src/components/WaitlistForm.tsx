@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { buildWhatsAppUrl, ELEVAFORGE_WHATSAPP_NUMBER } from '../lib/domain/content';
 
 // RF-001: formulario de captación. Client-side es solo UX — toda la
 // revalidación real ocurre en /api/waitlist (CLAUDE.md — Seguridad).
@@ -284,6 +285,19 @@ export default function WaitlistForm({ turnstileSiteKey }: { turnstileSiteKey?: 
             ? 'Revisá tu email para confirmar tu lugar. Te avisamos apenas abramos el lanzamiento.'
             : 'Te sumamos a la lista de espera. Te avisamos apenas abramos el lanzamiento.'}
         </p>
+        {phone && (
+          <a
+            className="btn btn-ghost wl-whatsapp-cta"
+            href={buildWhatsAppUrl(
+              ELEVAFORGE_WHATSAPP_NUMBER,
+              `Hola, soy ${name || 'un nuevo suscriptor'}. Me acabo de unir a la lista de espera de KOA Buds y dejé mi WhatsApp (${phone}) para que me contacten.`,
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Escribinos por WhatsApp
+          </a>
+        )}
       </div>
     );
   }
